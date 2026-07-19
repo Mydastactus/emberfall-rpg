@@ -1819,7 +1819,7 @@ function startMission(briefScene) {
 
 function scene(art, title, paras, choices, extraHtml) {
   const choiceHtml = (choices || []).map((ch, i) => `
-    <button class="${ch.backstory ? "backstory-choice" : ""}" onclick="${(ch.onclick || "").replace(/"/g, "&quot;")}" ${ch.disabled ? "disabled" : ""}>
+    <button class="${ch.backstory ? "backstory-choice" : ""}" onclick="${ch.onclick}" ${ch.disabled ? "disabled" : ""}>
       ${ch.txt}${ch.req ? ` <span class="req">${ch.req}</span>` : ""}
     </button>`).join("");
   renderGame(`<div class="panel">
@@ -2016,7 +2016,7 @@ function buy(cost, apply) {
 }
 function shopRow(label, desc, cost, owned, onclick) {
   if (owned) return `<button disabled>✓ ${label} <span class="req">— owned</span></button>`;
-  return `<button onclick="${(onclick || "").replace(/"/g, "&quot;")}" ${C.gold < cost ? "disabled" : ""}>${label} — <b>${cost}g</b> <span class="req">${desc}${C.gold < cost ? " (not enough gold)" : ""}</span></button>`;
+  return `<button onclick="${onclick}" ${C.gold < cost ? "disabled" : ""}>${label} — <b>${cost}g</b> <span class="req">${desc}${C.gold < cost ? " (not enough gold)" : ""}</span></button>`;
 }
 
 function equipRow(kind, id) {
@@ -2073,7 +2073,7 @@ function curiositiesScene() {
           const s = WIZ_SPELLS[k];
           if (C.spells.includes(k)) return `<button disabled>✓ 📖 ${s.name} <span class="req">— learned</span></button>`;
           if (C.level < s.minLevel) return `<button disabled>📖 ${s.name} <span class="req">— requires level ${s.minLevel}</span></button>`;
-          return `<button onclick="buy(${feyPrice(s.price)},()=>{C.spells.push('${k}');logRoll('📖 Learned','${s.name}','crit')});goScene('curiosities')" ${C.gold < feyPrice(s.price) ? "disabled" : ""}>📖 Learn ${s.name} — <b>${feyPrice(s.price)}g</b> <span class="req">${s.desc}</span></button>`;
+          return `<button onclick="buy(${feyPrice(s.price)},()=>{C.spells.push('${k}');logRoll('📖 Learned',${JSON.stringify(s.name)},'crit')});goScene('curiosities')" ${C.gold < feyPrice(s.price) ? "disabled" : ""}>📖 Learn ${s.name} — <b>${feyPrice(s.price)}g</b> <span class="req">${s.desc}</span></button>`;
         }).join("")}` : ""}
       <button onclick="goScene('town')">← Back to the city</button>
     </div>`);
@@ -3235,7 +3235,7 @@ function c12_balcony() {
       flags.baronsWon >= 2 && p >= 2
         ? { txt: "⚖ Arrest him for the King's justice — a true trial, with true evidence, before the realm", onclick: "c2_ending('trial')" }
         : null,
-      { txt: "😠 Say nothing. Let him see the King walk through the door behind you.", onclick: "c2_ending('" + (score >= 3 ? "daylight" : (flags.baronsWon >= 2 && p >= 2) ? "trial" : "catacombs") + "')" }
+      { txt: "😠 Say nothing. Let him see the King walk through the door behind you.", onclick: "c2_ending(" + JSON.stringify(score >= 3 ? "daylight" : (flags.baronsWon >= 2 && p >= 2) ? "trial" : "catacombs") + ")" }
     ].filter(Boolean));
 }
 function c2_ending(kind) {

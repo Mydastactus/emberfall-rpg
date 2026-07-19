@@ -8,7 +8,9 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 ## The Story
 
-Goblin raids are strangling the city of Ironvale — and High Councilor Thaddeus Thorne, the beloved, grandfatherly patron hiring heroes to stop them, is the man pulling every string. Rise from level 1 to 6 across a six-chapter campaign, gather the evidence coin by coin and ledger by ledger, and decide how the conspiracy ends: exposed before a weeping crowd, hunted into the dark, or repaid by the very warlord he thought he owned.
+**Campaign 1 — The Serpent of Ironvale.** Goblin raids are strangling the city of Ironvale — and High Councilor Thaddeus Thorne, the beloved, grandfatherly patron hiring heroes to stop them, is the man pulling every string. Rise from level 1 to 6, gather the evidence coin by coin and ledger by ledger, and decide how the conspiracy ends.
+
+**Campaign 2 — The Coward King.** Your hero continues into the counterstroke (levels 6–10): the ledger "proven" a forgery, a staged assassination rescue, and the ultimate frame-job — a good King maneuvered out of his own city by false intelligence, branded a coward and a thief by a forged abdication, while his "savior" takes the crown as Lord Protector. Run a resistance from a tannery cellar, win back the hearts of a propagandized city, find the broken King in the wilderness, and take Ironvale back. Your Campaign 1 choices — including who Thorne became at your hands — shape how it opens and how it can end.
 
 ## Features
 
@@ -16,40 +18,24 @@ Goblin raids are strangling the city of Ironvale — and High Councilor Thaddeus
 
 ![Character creation](creation.png)
 
-**D&D-style rules engine** — d20 skill checks with advantage, armor class, proficiency that scales with level, turn-based combat with initiative, class abilities (Sneak Attack, Magic Missile, Hunter's Mark, Second Wind, Cure Wounds), critical hits, and a live dice log showing every roll's math.
+**D&D-style rules engine** — d20 skill checks with advantage, armor class, proficiency that scales with level, turn-based combat with initiative, class abilities, critical hits, and a live dice log showing every roll's math. Enemies fight like they mean it: cowards break and flee, soldiers raise shields and parry, wolves hunt in packs — and bosses telegraph massive blows you can Defend against, bash you senseless, hamstring your footwork, poison your blood, and bellow war cries only the dragonfire-touched can ignore. Every status is visible, every save is rolled in the open.
 
 ![Combat](combat.png)
 
 **A living town** — Brannock's Forge for weapon and armor upgrades, Zephyrine's Curiosities for potions and magic items, a training yard to learn new skill proficiencies, and a tavern whose rumors foreshadow each chapter.
 
+**A real armory** — every class has weapon choices with honest tradeoffs (greataxes vs. sword-and-shield, warhammers, flails, three kinds of bow, twin daggers, kamas, hand crossbows) and class-true armor rules: fighters wear anything, rangers top out at scale mail, rogues sneak worse in medium armor, and wizards rely on the Mage Armor ward — plus swappable attack cantrips and learnable spells (Burning Hands, Sleep, Lightning Bolt). Cheap field bandages and alchemist's fire round out the kit, bought in shops or looted along the way.
+
 **Branching consequences** — a five-piece evidence system decides whether the King believes you before or after the knives come out; a moral fork in Chapter 3 (enforce the councilor's gray orders, refuse publicly, or subvert them in secret) echoes into the finale; and four different fates await the villain.
 
-**Save codes** — copy a save code anytime at the Chronicler's Quill and paste it on the title screen to resume. No account, no cookies, no storage.
+**A living soundscape, still one file** — a warm royalty-free fantasy ambient score is embedded right in the game and adapts to the fiction: full and bright in town, quieter on the road, and ducked low beneath synthesized war drums and dread drones when blades come out. Every sound effect is synthesized in your browser at the moment it plays: dice clatter, sword rings and crits, coin clinks, healing chimes, war-cry growls, spell shimmers, and a level-up fanfare. Toggle sound and music anytime from the corner controls.
+
+**Save codes** — copy a save code anytime at the Chronicler's Quill and paste it on the title screen to resume. Codes carry your hero (and your choices) across both campaigns. No account, no cookies, no storage.
 
 ## Credits
 
-Designed by David Thomas. Built with [Claude](https://claude.com).
+Designed by David Thomas. Built with [Claude](https://claude.com). Ambient music: royalty-free fantasy ambient track.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Play it, fork it, mod it, run it at game night.MIT License
-
-Copyright (c) 2026 David Thomas
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT — see [LICENSE](LICENSE). Play it, fork it, mod it, run it at game night.
