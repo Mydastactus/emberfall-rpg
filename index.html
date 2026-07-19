@@ -2147,7 +2147,13 @@ function prologue2Scene() {
 
 function councilScene() {
   const ch = flags.chapter;
-  if (ch === 2) {
+  if (ch === 1) {
+    scene("🏛", "The Council Hall",
+      [ `Thorne rises the moment he sees you, and the relief on his face is a whole speech. "You're on your feet. Thank the Dawnmother — when they carried you in, I..." He steadies himself, and slides the purse back across the table, still full. "The medicine is still out there, my friend. The sick are still waiting. I would send no one else."`,
+        `The trail to the goblin camp is a day older, but trails keep.` ],
+      [ { txt: "🌄 Ride out again — the medicine train won't recover itself", onclick: "startMission('m1_road')" },
+        { txt: "🏙 Not yet — see to business in the city first", onclick: "goScene('town')" } ]);
+  } else if (ch === 2) {
     scene("🏛", "The Council Hall",
       [ `Thorne meets you on the steps, waving off two clerks. Since the medicine train, the raids have doubled — and last night the <b>Westmill grain barges</b> burned at their moorings.`,
         `"We found where they nest." He unrolls a map — the warren of <b>Craghollow Ridge</b>, marked in exacting detail: entrances, guard posts, even patrol timings. "One of Gar'Thok's lieutenants — a brute called <b>Grukk</b> — runs raids from these caves. Cut him out and we buy the valley a season of peace." He hesitates, then adds quietly: "I've marked everything my sources could gather. I'd never forgive myself if you walked in blind."`,
