@@ -191,6 +191,7 @@
 </div>
 <script>
 "use strict";
+const SUPPORT_URL = ""; // set to your Ko-fi/BuyMeACoffee link to show the in-game support button
 /* ============================================================
    AUDIO — synthesized SFX & adaptive ambience (no files, no loading)
    ============================================================ */
@@ -448,7 +449,7 @@ const fmtMod = m => (m >= 0 ? "+" + m : "" + m);
 const profBonus = () => (C ? (C.level >= 9 ? 4 : C.level >= 5 ? 3 : 2) : 2);
 
 /* ---------------- LEVELING ---------------- */
-const XP_LEVELS = [0, 0, 150, 400, 900, 1600, 2600, 4300, 6400, 9000, 12200]; // index = level
+const XP_LEVELS = [0, 0, 150, 500, 1100, 2000, 3200, 5200, 7700, 10600, 14400]; // index = level
 const MAX_LEVEL = 10;
 function xpToNext() { return C.level >= MAX_LEVEL ? null : XP_LEVELS[C.level + 1]; }
 function grantXp(amount, label) {
@@ -1819,7 +1820,7 @@ function startMission(briefScene) {
 
 function scene(art, title, paras, choices, extraHtml) {
   const choiceHtml = (choices || []).map((ch, i) => `
-    <button class="${ch.backstory ? "backstory-choice" : ""}" onclick="${ch.onclick}" ${ch.disabled ? "disabled" : ""}>
+    <button class="${ch.backstory ? "backstory-choice" : ""}" onclick="${(ch.onclick || "").replace(/"/g, "&quot;")}" ${ch.disabled ? "disabled" : ""}>
       ${ch.txt}${ch.req ? ` <span class="req">${ch.req}</span>` : ""}
     </button>`).join("");
   renderGame(`<div class="panel">
@@ -1859,7 +1860,7 @@ function evidenceWeight() { return flags.evidence.reduce((t, e) => t + EVIDENCE[
    ============================================================ */
 function makeSaveCode() {
   const data = {
-    v: 4, name: C.name, raceId: C.race.id, clsId: C.cls.id, originId: C.origin.id,
+    v: 5, name: C.name, raceId: C.race.id, clsId: C.cls.id, originId: C.origin.id,
     eventId: C.event.id, motiveId: C.motive.id, scores: C.scores, maxHp: C.maxHp, hp: C.hp,
     gold: C.gold, xp: C.xp, level: C.level, items: C.items, profs: C.profs,
     ac: C.ac, atkBonus: C.atkBonus, dmgBonus: C.dmgBonus, weaponTier: C.weaponTier,
@@ -1874,14 +1875,16 @@ function makeSaveCode() {
       thorneFate: flags.thorneFate || null, kingBelieved: !!flags.kingBelieved, garthokTold: !!flags.garthokTold,
       truth: flags.truth || 0, lordProtector: !!flags.lordProtector, sawStaging: !!flags.sawStaging,
       opsDone: flags.opsDone || [], bramSaved: !!flags.bramSaved, zargaDeal: !!flags.zargaDeal,
-      baronsWon: flags.baronsWon || 0, kingRestored: !!flags.kingRestored, decoyRefused: !!flags.decoyRefused }
+      baronsWon: flags.baronsWon || 0, kingRestored: !!flags.kingRestored, decoyRefused: !!flags.decoyRefused,
+      herring1Done: !!flags.herring1Done, herring1Solved: !!flags.herring1Solved, herringWidowDone: !!flags.herringWidowDone,
+      embarrassed: !!flags.embarrassed, patrolC: flags.patrolC || 0, lastPatrolChapter: flags.lastPatrolChapter || 0 }
   };
   return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
 }
 function loadSaveCode(code) {
   try {
     const dta = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
-    if (![2, 3, 4].includes(dta.v)) throw new Error("version");
+    if (![2, 3, 4, 5].includes(dta.v)) throw new Error("version");
     const race = RACES.find(r => r.id === dta.raceId), cls = CLASSES.find(c => c.id === dta.clsId);
     const origin = ORIGINS.find(o => o.id === dta.originId), event = EVENTS.find(e => e.id === dta.eventId);
     const motive = MOTIVES.find(m => m.id === dta.motiveId);
@@ -1962,6 +1965,7 @@ function townScene() {
       { txt: "🔮 Zephyrine's Curiosities — potions & wonders", onclick: "goScene('curiosities')" },
       { txt: "🎯 The Training Yard — learn new skills", onclick: "goScene('training')" },
       { txt: "🍺 The Gilded Griffin — rest & rumors (5 gold, full heal)", onclick: "tavernRest()" },
+      { txt: "🐎 Patrol the roads (5 gold supplies) — trouble, leads, and experience find those who look", onclick: "patrolRoll()" },
       { txt: "🪶 Chronicler's Quill — save your tale", onclick: "showSaveScreen()" } ]);
 }
 
@@ -2016,7 +2020,7 @@ function buy(cost, apply) {
 }
 function shopRow(label, desc, cost, owned, onclick) {
   if (owned) return `<button disabled>✓ ${label} <span class="req">— owned</span></button>`;
-  return `<button onclick="${onclick}" ${C.gold < cost ? "disabled" : ""}>${label} — <b>${cost}g</b> <span class="req">${desc}${C.gold < cost ? " (not enough gold)" : ""}</span></button>`;
+  return `<button onclick="${(onclick || "").replace(/"/g, "&quot;")}" ${C.gold < cost ? "disabled" : ""}>${label} — <b>${cost}g</b> <span class="req">${desc}${C.gold < cost ? " (not enough gold)" : ""}</span></button>`;
 }
 
 function equipRow(kind, id) {
@@ -2073,7 +2077,7 @@ function curiositiesScene() {
           const s = WIZ_SPELLS[k];
           if (C.spells.includes(k)) return `<button disabled>✓ 📖 ${s.name} <span class="req">— learned</span></button>`;
           if (C.level < s.minLevel) return `<button disabled>📖 ${s.name} <span class="req">— requires level ${s.minLevel}</span></button>`;
-          return `<button onclick="buy(${feyPrice(s.price)},()=>{C.spells.push('${k}');logRoll('📖 Learned',${JSON.stringify(s.name)},'crit')});goScene('curiosities')" ${C.gold < feyPrice(s.price) ? "disabled" : ""}>📖 Learn ${s.name} — <b>${feyPrice(s.price)}g</b> <span class="req">${s.desc}</span></button>`;
+          return `<button onclick="buy(${feyPrice(s.price)},()=>{C.spells.push('${k}');logRoll('📖 Learned','${s.name}','crit')});goScene('curiosities')" ${C.gold < feyPrice(s.price) ? "disabled" : ""}>📖 Learn ${s.name} — <b>${feyPrice(s.price)}g</b> <span class="req">${s.desc}</span></button>`;
         }).join("")}` : ""}
       <button onclick="goScene('town')">← Back to the city</button>
     </div>`);
@@ -2473,6 +2477,8 @@ function m4_fort() {
 }
 function m4_tent() {
   const canMatch = flags.coinKept && !flags.evidence.includes("coin");
+  const inv = flags.m.tentInv || (flags.m.tentInv = sceneCheck("Investigation", 12).success ? "true" : "false");
+  if (inv === "false") return m4_tent_herring(canMatch);
   scene("⛺", "The Commander's Tent",
     [ `Vex's tent is a quartermaster's office in miniature — and the paperwork is <i>damning</i>. Topmost: a copy of <b>your route</b>, the one from the Royal Writ, in a clean clerk's hand — under a wax seal bearing the <b>Ironvale council's own sigil</b>. <b>(EVIDENCE: the route note.)</b>`,
       `A strongbox holds <b>80 gold</b>, much of it fresh-minted sunburst coin, beside a field-surgeon's kit of clean <b>bandages</b> and a vial of <b>alchemist's fire</b>.`,
@@ -2482,6 +2488,36 @@ function m4_tent() {
         ? `More of the sunburst mint — the same coin you've already matched to Thorne's gift. The purse never changes.`
         : `More of that mirror-bright sunburst mint. It nags at you — but without a comparison coin, a stamp proves nothing on its own.` ],
     [ { txt: "🏰 Ride hard for Ironvale", onclick: `addEvidence('routeNote'); ${canMatch ? "addEvidence('coin');" : ""} C.gold += 80; C.items.push('Field Bandages',"Alchemist's Fire"); grantXp(250,'Mission: Redwatch retaken'); goScene('m4_return')` } ]);
+}
+function m4_tent_herring(canMatch) {
+  scene("⛺", "The Commander's Tent",
+    [ `Vex's tent is a quartermaster's office in miniature, and in the paper blizzard you seize the topmost damning thing: a <b>requisition slip</b> for "route escort provisions," counter-signed by the <b>Marshal's own quartermaster</b>. There's your leak — a greedy supply officer selling routes to the horde.`,
+      `It's a clean answer. It fits in one sentence. <i>Somewhere beneath it, in the pile you didn't finish searching, other papers stay unread.</i>`,
+      `A strongbox holds <b>80 gold</b>, a surgeon's kit of <b>bandages</b> and a vial of <b>alchemist's fire</b>.` ],
+    [ { txt: "⚖ Ride back and denounce the quartermaster to the war council", req: "(act on the lead as it stands)", onclick: `addEvidence('reqSlip'); C.gold += 80; C.items.push('Field Bandages',"Alchemist's Fire"); grantXp(200,'Redwatch retaken — a lead in hand'); goScene('m4_qm_accuse')` },
+      { txt: "🔍 Something's too tidy. Tear the tent apart properly before you ride.", req: "(Insight, DC 12 — question the convenient answer)", onclick: `C.gold += 80; C.items.push('Field Bandages',"Alchemist's Fire"); m4_qm_verify(${canMatch})` } ]);
+}
+function m4_qm_verify(canMatch) {
+  const res = sceneCheck("Insight", 12);
+  if (res.success) {
+    scene("⛺", "The Second Look",
+      [ `You sit with the slip a moment — and it curdles. A quartermaster selling routes doesn't leave his own counter-signature lying <i>on top of the pile</i>. Placed. Findable. You dig properly this time — and there, folded beneath the false bottom of the map chest, is the real thing: <b>your route, in a clean clerk's hand, under the Ironvale council's own seal.</b> <b>(EVIDENCE: the route note.)</b>`,
+        `Someone dressed this tent for visitors. Remember that.` ],
+      [ { txt: "🏰 Ride hard for Ironvale — with the true lead", onclick: `addEvidence('routeNote'); ${canMatch ? "addEvidence('coin');" : ""} grantXp(120,'the second look'); goScene('m4_return')` } ]);
+  } else {
+    scene("⛺", "Nothing More",
+      [ `You turn the tent over twice and find only camp-clutter. The slip is what you have, and the slip is what you'll carry. <i>(Evidence taken — unverified.)</i>` ],
+      [ { txt: "🏰 Ride hard for Ironvale", onclick: "addEvidence('reqSlip'); grantXp(60,'a thorough, fruitless search'); goScene('m4_return')" } ]);
+  }
+}
+function m4_qm_accuse() {
+  flags.embarrassed = true;
+  flags.citizenRep = (flags.citizenRep || 0) - 1;
+  scene("⚖", "The Wrong Man",
+    [ `The war council convenes; the quartermaster — a stammering, decent, terrified man — is arrested at his supper. It takes the Marshal's clerks two days to prove what better paperwork would have shown you in one: the "requisition slip" is written on stock the quartermaster's office has never used, in a hand that isn't his.`,
+      `He is released with apologies he'll never quite believe. Thorne, magnificently, defends YOU: "an honest error, from our most valiant friend — we are all stretched thin." The court nods. The gallery remembers the accusation, not the retraction.`,
+      `<i>Someone built that slip to be found — and you carried it home for them. The false lead is spent; whoever set it now knows exactly how you can be steered.</i> <b>(Reputation dented. The council will weigh your next accusation more skeptically.)</b>` ],
+    [ { txt: "🤐 Learn the lesson that expensive", onclick: "goScene('m4_return')" } ]);
 }
 function m4_return() {
   const w = evidenceWeight();
@@ -2494,6 +2530,15 @@ function m4_return() {
 }
 function m4_accuse() {
   const w = evidenceWeight();
+  if (w >= 4 && hasFalseEvidence()) {
+    flags.accusedEarly = true;
+    scene("👑", "The Chain Breaks at Its Weakest Link",
+      [ `You lay out the case — and it begins well. The coins. The seals. Alden's face grows graver by the minute... until his examiner reaches the ${flags.evidence.includes("smugglerNote") ? "smugglers' manifest" : "unverified papers"} in your stack, and takes it apart in four sentences.`,
+        `"Forged stock. Copied hand. Planted, sire — and swallowed." The examiner does not look up. Neither, now, does the King.`,
+        `"You bring me true things and false things in the same satchel," Alden says at last, wearily, "and ask me to behead a friendship on the difference. <b>Come back when you know which is which.</b>" You are escorted out. The good evidence went down with the bad — that is what false leads are FOR.` ],
+      [ { txt: "🤐 Purge the false papers and rebuild the case", onclick: "flags.evidence = flags.evidence.filter(e => !EVIDENCE[e].false); logRoll('🧾 Purged','You burn the planted evidence. Only the true case remains.','fail'); flags.chapter = 5; goScene('town')" } ]);
+    return;
+  }
   if (w >= 4) {
     flags.kingDoubt = true;
     scene("👑", "The Seed of Doubt",
@@ -2600,6 +2645,14 @@ function m6_stage() {
 function m6_king() {
   if (flags.kingBelieved) return goScene("m6_gate");
   const w = evidenceWeight();
+  if (w >= 5 && hasFalseEvidence()) {
+    scene("👑", "One Bad Coin Spoils the Purse",
+      [ `You find Alden armoring for the walls and lay out everything — and everything is nearly enough. Then his examiner reaches the unverified papers in your satchel and pulls the thread, and you watch a fortress of proof develop one visible crack.`,
+        `"The rest may be gold," the King says, quiet and terrible, "but you handed me a counterfeit WITH it, and tonight of all nights I cannot afford one." His hand closes on the ledger anyway — wanting to believe. "Prove you know true from false. Then we finish this."`,
+        `<i>(Purge the false evidence — the Chronicler's Quill can't help you here; only the night can.)</i>` ],
+      [ { txt: "🔥 Burn the planted papers and keep watch over the King tonight", onclick: "flags.evidence = flags.evidence.filter(e => !EVIDENCE[e].false); logRoll('🧾 Purged','The false leads go into the brazier.','fail'); m6_assassins()" } ]);
+    return;
+  }
   if (w >= 5) {
     flags.kingBelieved = true;
     scene("👑", "The Breaking Point",
@@ -2910,6 +2963,7 @@ function emberTownScene() {
       { txt: "🧿 The Black Market — gear the Protectorate can't trace", onclick: "goScene('blackmarket')" },
       { txt: "🌆 Slip up to the surface — forge, curiosities, training yard, the Griffin", onclick: "goScene('surface')" },
       { txt: "🛏 Rest in the safehouse (free — full heal)", onclick: "C.hp = C.maxHp; logRoll('🛏 Rest','Safehouse cot. Fully healed.','success'); goScene('town')" },
+      { txt: "🐎 Night patrol (5 gold supplies) — the occupied city never runs out of trouble", onclick: "patrolRoll()" },
       { txt: "🪶 Chronicler's Quill — save your tale", onclick: "showSaveScreen()" } ]);
 }
 function surfaceScene() {
@@ -3137,7 +3191,7 @@ function c11_baron(who) {
   let won = false, text = "";
   const p = proofCount();
   if (who === "hallowmere") {
-    const res = sceneCheck("Persuasion", Math.max(8, 12 - p * 2));
+    const res = sceneCheck("Persuasion", Math.max(8, 12 - p * 2 + (hasFalseEvidence() ? 2 : 0)));
     won = res.success;
     text = won
       ? `You give Hallowmere the scout's dispatch case and let him read a dead man's chained-wrist orders for himself. He is quiet a long time. "My granaries burned while my levies chased ghosts," he says at last. "I would very much like to be angry at the correct person." The grain banner dips to the King.`
@@ -3235,7 +3289,7 @@ function c12_balcony() {
       flags.baronsWon >= 2 && p >= 2
         ? { txt: "⚖ Arrest him for the King's justice — a true trial, with true evidence, before the realm", onclick: "c2_ending('trial')" }
         : null,
-      { txt: "😠 Say nothing. Let him see the King walk through the door behind you.", onclick: "c2_ending(" + JSON.stringify(score >= 3 ? "daylight" : (flags.baronsWon >= 2 && p >= 2) ? "trial" : "catacombs") + ")" }
+      { txt: "😠 Say nothing. Let him see the King walk through the door behind you.", onclick: "c2_ending('" + (score >= 3 ? "daylight" : (flags.baronsWon >= 2 && p >= 2) ? "trial" : "catacombs") + "')" }
     ].filter(Boolean));
 }
 function c2_ending(kind) {
@@ -3269,7 +3323,10 @@ function epilogue2Scene() {
   }[C.motive.id];
 
   scene("🌄", "Epilogue — The Coward King, Uncrowned",
-    [ `<i>${fate}</i>`, realm.join(" "), `<i>${ep}</i>` ],
+    [ `<i>${fate}</i>`, realm.join(" "), `<i>${ep}</i>`,
+      `Among Thorne's effects, the clerks catalogue one item no one can place: an unopened letter, sealed in <b>gray wax</b> with the device of a chair. Inside, a single line in a courtly cipher the crown's readers crack in an afternoon — and wish they hadn't:`,
+      `<i>"To our brother in Ironvale — the Second Chair grows impatient with your theater. The nation has other cities. The Circle has other chairs. — V."</i>`,
+      `<b>Other cities. Other chairs.</b> Thaddeus Thorne, it turns out, was not a spider. He was a strand. <i>The story of the nation continues in the campaigns to come.</i>` ],
     [],
     `<div class="panel epilogue center" style="margin-top:14px">
       <h3>⚔ ${esc(C.name)}'s Legend, Complete ⚔</h3>
@@ -3296,6 +3353,205 @@ Object.assign(SCENES, {
 });
 
 /* ============================================================
+   RANDOM ENCOUNTERS — patrols, road trouble & red herrings
+   ============================================================ */
+function patrolFatigue() {
+  if (flags.lastPatrolChapter !== flags.chapter) { flags.lastPatrolChapter = flags.chapter; flags.patrolC = 0; }
+  return flags.patrolC || 0;
+}
+function patrolXp(base) {
+  const n = patrolFatigue();
+  return n >= 3 ? Math.floor(base / 2) : base;
+}
+
+function patrolRoll() {
+  flags.m = {};
+  const n = patrolFatigue();
+  flags.patrolC = (flags.patrolC || 0) + 1;
+  if (C.gold >= 5) { C.gold -= 5; logRoll("🐎 Patrol", "Supplies and stabling: −5 gold." + (n >= 3 ? " The roads grow quiet — pickings are thinner (half XP)." : ""), "success"); }
+  const ch = flags.chapter;
+  // red herrings fire on the first patrol of their window, once
+  if (ch >= 2 && ch <= 4 && !flags.herring1Done) return herringSmugglers();
+  if (ch >= 9 && ch <= 10 && !flags.herringWidowDone) return herringWidow();
+  const table = ch <= 2 ? T1_ENCOUNTERS : ch <= 4 ? T2_ENCOUNTERS : ch <= 6 ? T3_ENCOUNTERS : ch <= 10 ? T4_ENCOUNTERS : T5_ENCOUNTERS;
+  table[rand(table.length)]();
+}
+
+function patrolFightIntro(title, text, foes, intro) {
+  scene("🐎", title, [text],
+    [ { txt: "⚔ Engage!", onclick: `startCombat(${JSON.stringify(foes)}, 'patrol_after', { fleeScene: 'town', intro: ${JSON.stringify(intro)} })` } ]);
+}
+function patrol_after() {
+  const g = 10 + d(20);
+  C.gold += g;
+  scene("🐎", "The Road, Quieter",
+    [ `The trouble is dealt with, and the road breathes easier for it. You recover <b>${g} gold</b> from the fallen — and the valley owes you one more small, uncounted debt.` ],
+    [ { txt: "🏙 Back to the city", onclick: "goScene('town')" } ]);
+}
+
+/* --- Tier 1 (ch 1-2) --- */
+const T1_ENCOUNTERS = [
+  () => patrolFightIntro("Roadside Ambush", "Two goblins burst from the ditch-brush with the confidence of creatures who have not yet met you.", ["goblin", "goblin2"], "Jagged blades, bad intentions, worse judgment."),
+  () => patrolFightIntro("A Winter-Hungry Wolf", "A lone wolf pacing the treeline decides you look slower than a deer. It is mistaken about several things.", ["wolf"], "It circles once, twice — then commits."),
+  () => { // overturned cart
+    const res = sceneCheck("Athletics", 12);
+    if (res.success) { const xp = patrolXp(60); C.gold += 25;
+      scene("🛞", "The Overturned Cart", [ `A grain cart lies wheels-up in the ditch, its carter pinned and hollering. You set your back under the frame and heave it upright. He presses <b>25 gold</b> on you and refuses to take no. <b>(+${xp} XP)</b>` ],
+        [ { txt: "🏙 Back to the city", onclick: `grantXp(${xp},'a good deed with leverage'); goScene('town')` } ]);
+    } else { const dmg = d(4); C.hp = Math.max(1, C.hp - dmg);
+      scene("🛞", "The Overturned Cart", [ `The cart shifts wrong and takes a bite of your shoulder before settling. <b>(−${dmg} HP)</b> The carter wriggles free on his own and shares his lunch by way of thanks. <b>(+${patrolXp(25)} XP)</b>` ],
+        [ { txt: "🏙 Back to the city", onclick: `grantXp(${patrolXp(25)},'an honest attempt'); goScene('town')` } ]);
+    }
+  },
+  () => { // lost child
+    const res = sceneCheck("Survival", 11);
+    const xp = patrolXp(res.success ? 70 : 30);
+    flags.citizenRep = (flags.citizenRep || 0) + (res.success ? 1 : 0);
+    scene("🏮", "The Miller's Girl", [ res.success
+      ? `A frantic mother, a missing daughter, and a cold trail into the pinewood. You read the broken bracken like a letter and find the girl asleep in a hollow log, furious at being rescued. The mill district will remember this. <b>(+${xp} XP, reputation grows)</b>`
+      : `You search the pinewood until dusk and find nothing — but your shouting flushes the girl out of hiding on its own, indignant and perfectly fine. Less heroic than intended. Still counts. <b>(+${xp} XP)</b>` ],
+      [ { txt: "🏙 Back to the city", onclick: `grantXp(${xp},'the miller\\'s girl'); goScene('town')` } ]);
+  }
+];
+/* --- Tier 2 (ch 3-4) --- */
+const T2_ENCOUNTERS = [
+  () => patrolFightIntro("Toll of the Back Road", "Two hired blades have stretched a rope across the back road and invented a toll. Their pricing model has not accounted for you.", ["thug", "thug"], "\"Nothing personal,\" one begins, ritually."),
+  () => patrolFightIntro("Raider Picket", "A hobgoblin and its archer shadow sit a low ridge, counting wagons for someone's ledger.", ["hobgoblin", "gobArcher"], "They spot you spotting them. Professional courtesy ends."),
+  () => { // wounded courier
+    const res = sceneCheck("Medicine", 12);
+    const xp = patrolXp(res.success ? 90 : 40);
+    scene("📯", "The Wounded Courier", [ res.success
+      ? `A royal courier sits bleeding in the ditch, horse lame, satchel clutched white-knuckled. You bind the arrow-graze properly and set the leg. Through gritted teeth: "Third rider hit this month on a route nobody's supposed to KNOW..." — a thought that will keep. <b>(+${xp} XP)</b>`
+      : `You do what you can for the bleeding courier, which mostly amounts to company and bad bandaging until the patrol arrives. <b>(+${xp} XP)</b>` ],
+      [ { txt: "🏙 Back to the city", onclick: `grantXp(${xp},'the king\\'s mail'); goScene('town')` } ]);
+  }
+];
+/* --- Tier 3 (ch 5-6) --- */
+const T3_ENCOUNTERS = [
+  () => patrolFightIntro("A Blackpike 'Escort'", "A Blackpike elite and a hobgoblin walk the same road, in step, unbothered by each other's company. They'd rather you hadn't seen that.", ["eliteGuard", "hobgoblin"], "\"Wrong road, hero,\" the elite says, almost kindly."),
+  () => patrolFightIntro("Pack on the Winter Road", "A worg and its running-mate have learned the trick of hunting travelers at dusk. Tonight the lesson runs the other way.", ["worg", "wolf"], "Eyes like coals, moving as one."),
+  () => { // shrine
+    const res = sceneCheck("Religion", 12);
+    const xp = patrolXp(70);
+    scene("🕯", "The Wayside Shrine", [ res.success
+      ? `A Dawnmother shrine stands neglected at the crossroads. You clear the leaves, right the candle, and say the old words properly. Warmth settles into your bones like a debt being repaid. <b>(Fully healed. +${xp} XP)</b>`
+      : `You tidy the crossroads shrine as best you remember how. The Dawnmother, presumably, grades on effort. <b>(Healed a little. +${patrolXp(35)} XP)</b>` ],
+      [ res.success
+        ? { txt: "🏙 Back to the city", onclick: `C.hp = C.maxHp; grantXp(${xp},'the old words'); goScene('town')` }
+        : { txt: "🏙 Back to the city", onclick: `heal(d(6)+2,'wayside blessing'); grantXp(${patrolXp(35)},'the old words, roughly'); goScene('town')` } ]);
+  }
+];
+/* --- Tier 4 (C2, ch 8-10) --- */
+const T4_ENCOUNTERS = [
+  () => patrolFightIntro("Curfew Sweep", "A Blackpike enforcer and a Truth-Warden work the lane, checking papers nobody used to need. Yours are the wrong kind entirely.", ["blackpike", "inquisitor"], "\"Papers.\" A pause. \"...You're on a LIST.\""),
+  () => patrolFightIntro("Catacomb Bleed-Through", "The sealed catacomb doors don't hold everything. Two of the city's unburied dead have found a cellar exit.", ["ghoul", "ghoul"], "They come up through the fishmonger's floor, hungry."),
+  () => { // bread run
+    const res = sceneCheck("Stealth", 13);
+    if (res.success) { const xp = patrolXp(110); addTruth(3, "bread where the Protectorate said there was none");
+      scene("🍞", "The Bread Run", [ `Two hundred loaves, one borrowed cart, and a route through three alleys the patrol schedules forgot. By dawn the tenement kitchens are full and nobody knows how — except everybody knows who. <b>(+${xp} XP, the city warms to the truth)</b>` ],
+        [ { txt: "🕯 Back to the Ember", onclick: `grantXp(${xp},'the bread run'); goScene('town')` } ]);
+    } else patrolFightIntro("The Bread Run, Blown", "A lantern swings the wrong way at the worst corner and the whistles start. The bread gets through — but you'll have to argue the point.", ["thug", "blackpike"], "Two of them between the cart and the alley mouth.");
+  }
+];
+/* --- Tier 5 (C2, ch 11-12) --- */
+const T5_ENCOUNTERS = [
+  () => patrolFightIntro("Cleanup Crew", "The Gray Web tidies as it retreats — a knife-man and a bought enforcer, erasing a witness's address. You are ahead of schedule.", ["assassin2", "blackpike"], "They exchange one look that agrees to split the fee."),
+  () => patrolFightIntro("Protectorate Patrol", "A Protectorate elite and a Blackpike walk the wall road with the enthusiasm of men whose wages have stopped clearing.", ["palaceElite", "eliteGuard"], "They fight anyway. Contracts are contracts."),
+  () => { // messenger intercept
+    const res = sceneCheck("Stealth", 13);
+    const xp = patrolXp(res.success ? 130 : 60);
+    if (res.success) C.gold += 60;
+    scene("📨", "The Gray Messenger", [ res.success
+      ? `A rider in unmarked gray takes the north road at midnight, and his saddlebags take a detour into your hands. Cipher letters, a purse of <b>60 gold</b> — and a seal you don't recognize: a chair, in gray wax. You keep that one. <b>(+${xp} XP)</b>`
+      : `The gray rider is better than he looks — he's away over the hedge with his saddlebags before you're close. But you saw the seal on his glove: a chair, in gray wax. Odd. <b>(+${xp} XP)</b>` ],
+      [ { txt: "🕯 Back to the Ember", onclick: `grantXp(${xp},'the gray messenger'); goScene('town')` } ]);
+  }
+];
+
+/* ============================================================
+   RED HERRINGS — false leads with real consequences
+   ============================================================ */
+function herringSmugglers() {
+  flags.herring1Done = true;
+  scene("⚓", "The Duskhaven File",
+    [ `A dockhand slips you a tip that smells like money: a Duskhaven smuggling ring, flush since the raids began, running goods on the same nights the caravans burn. There's even a <b>file</b> — cargo manifests, names, dates — that "fell off" a watch-captain's desk.`,
+      `It's tidy. It's damning. It's exactly what you've been looking for.`,
+      `<i>Which is worth thinking about.</i>` ],
+    [ { txt: "⚔ Raid the smugglers' warehouse tonight", onclick: "startCombat(['thug','thug'], 'herring1_after', { intro: 'The smugglers keep two hired blades on the door and low expectations behind it. They fight like men defending inventory, not a conspiracy.' })" } ]);
+}
+function herring1_after() {
+  const res = sceneCheck("Investigation", 13);
+  if (res.success) {
+    flags.herring1Solved = true;
+    const xp = patrolXp(150);
+    scene("⚓", "A Lead Too Clean",
+      [ `The warehouse yields... smuggling. Ordinary, grubby, profitable smuggling — untaxed brandy and stolen wool. No goblin steel. No sunburst coin. No connection to the raids at all.`,
+        `And then the detail that matters: the famous "fallen" file is written in one uniform hand on fresh paper — a <b>copy</b>, made recently, by a clerk. Files don't fall off desks. Files are <b>pushed</b>. Someone wanted the hero of Ironvale spending nights chasing brandy-runners.`,
+        `You've learned something better than a lead: you've learned someone is <b>feeding you leads</b>. <b>(+${xp} XP — and you'll know the smell next time.)</b>` ],
+      [ { txt: "🏙 Back to the city, warier", onclick: `grantXp(${xp},'the lead too clean'); goScene('town')` } ]);
+  } else {
+    addEvidence("smugglerNote");
+    const xp = patrolXp(60);
+    scene("⚓", "Case Closed?",
+      [ `The warehouse yields crates, contraband, and confirmation enough for a tired mind: smugglers, profiting off the chaos. You pocket the cargo manifest as evidence — it fits the file perfectly.`,
+        `<i>It fits the file perfectly.</i> The thought tries to snag on something, and doesn't quite. <b>(Evidence taken — unverified. +${xp} XP)</b>` ],
+      [ { txt: "🏙 Back to the city", onclick: `grantXp(${xp},'the warehouse raid'); goScene('town')` } ]);
+  }
+}
+
+function herringWidow() {
+  flags.herringWidowDone = true;
+  const auto = C.event.id === "betrayed";
+  const res = auto ? { success: true } : sceneCheck("Insight", 13);
+  if (res.success) {
+    scene("🕯", "The Widow's Offer",
+      [ `Word reaches the Ember of a defector: a clerk's widow, wronged by the Protectorate, offering payroll documents that "name every bought judge in the city." She'll meet only you, alone, at the fuller's yard at midnight.`,
+        auto ? `You've been the trusting one before, at knife-cost. This has the exact shape of that night: the grief a little too articulate, the terms a little too specific, the location a little too enclosed. <i>(Betrayed by a Friend — you know a set table when you see one.)</i>` : `But the details sit wrong: her grief is word-perfect, her documents unseen, her chosen yard has one entrance and no windows. This isn't a defector. It's <b>bait</b>.`,
+        `The Gray Web is fishing for the Ember. Which means the line runs both ways.` ],
+      [ { txt: "🎭 Send a reply — and feed the Web a map of safehouses the Ember has never used", req: "(Deception, DC 12 — turn the sting)", onclick: "herringWidowFlip()" },
+        { txt: "🚪 Simply don't show. Let them waste the night.", onclick: `grantXp(${patrolXp(80)},'the meeting that never was'); goScene('town')` } ]);
+  } else {
+    scene("🕯", "The Widow's Offer",
+      [ `A clerk's widow, wronged by the Protectorate, offers payroll documents naming every bought judge in the city. Her grief is raw, her terms simple, her courage humbling. You go to the fuller's yard at midnight.`,
+        `The documents are real paper, at least. The widow is a Gray Web actress, at least a good one, and the yard's one entrance closes behind you with the sound of professional boots.` ],
+      [ { txt: "⚔ Fight out of the trap!", onclick: "startCombat(['assassin2','blackpike'], 'herringWidow_after', { intro: 'From the shadows, the widow watches with dry eyes, already composing tomorrow\\'s crier script.' })" } ]);
+  }
+}
+function herringWidowFlip() {
+  const res = sceneCheck("Deception", 12);
+  if (res.success) {
+    addTruth(8, "the Web wastes a month raiding empty cellars");
+    const xp = patrolXp(180);
+    scene("🎭", "The Line Runs Both Ways",
+      [ `Your reply is a masterwork of frightened sincerity, and attached to it: a hand-drawn map of five Ember "safehouses" — a granary, two condemned cellars, a fuller's loft, and one address that happens to be a Blackpike sergeant's mother's house.`,
+        `The Web spends a month kicking down empty doors and one extremely awkward one. The Ember's real cellars go untouched — and the city notices whose intelligence keeps being wrong. <b>(+${xp} XP, Truth rises)</b>` ],
+      [ { txt: "🕯 Back to the Ember", onclick: `grantXp(${xp},'the flipped sting'); goScene('town')` } ]);
+  } else {
+    const xp = patrolXp(70);
+    scene("🎭", "Too Clever By Half",
+      [ `Your reply reads frightened and sincere — mostly. Somewhere in it, a phrase only a resistance quartermaster would use, and the Web's readers are paid to notice. No answer ever comes. The line goes quiet, both ways. Nothing lost — except the chance. <b>(+${xp} XP)</b>` ],
+      [ { txt: "🕯 Back to the Ember", onclick: `grantXp(${xp},'a near miss'); goScene('town')` } ]);
+  }
+}
+function herringWidow_after() {
+  addTruth(-6, "criers: 'loyalist thugs assault a grieving widow'");
+  addEvidence("widowPapers");
+  scene("📰", "The Morning Version",
+    [ `You fight clear of the fuller's yard — bruised, alive, and holding the widow's "payroll documents," which you already know better than to trust.`,
+      `The criers have their version out by breakfast: <i>masked loyalist brutes, a war hero's widow, an unprovoked assault.</i> There are woodcuts. In them you have fangs. <b>(Truth falls. The papers join your satchel — unverified, and radioactive.)</b>` ],
+    [ { txt: "🕯 Back to the Ember", onclick: `grantXp(${patrolXp(90)},'the sprung trap'); goScene('town')` } ]);
+}
+
+function hasFalseEvidence() { return flags.evidence.some(e => EVIDENCE[e] && EVIDENCE[e].false); }
+
+Object.assign(SCENES, { patrol_after, herring1_after, herringWidow_after, m4_qm_accuse });
+Object.assign(EVIDENCE, {
+  smugglerNote: { name: "? Smugglers' cargo manifest — unverified", weight: 0, false: true },
+  reqSlip:      { name: "? Quartermaster's requisition slip — unverified", weight: 0, false: true },
+  widowPapers:  { name: "? The 'widow's' payroll papers — unverified", weight: 0, false: true }
+});
+
+/* ============================================================
    TITLE SCREEN & BOOT
    ============================================================ */
 function renderTitle() {
@@ -3303,11 +3559,12 @@ function renderTitle() {
     <div class="scene-art" style="font-size:4em">🐍</div>
     <h2 style="border:none">A Solo Campaign of Dice &amp; Destiny</h2>
     <p class="flavor" style="max-width:600px;margin:10px auto 6px">Goblin raids are strangling the city of Ironvale — and the kindly councilor hiring heroes to stop them is the man pulling every string. Forge a hero, rise from level 1 to 6, gear up at the forge and the enchanter's shop, and unmask a conspiracy — then survive its author's counterstroke, when a framed King must be pulled back from exile.</p>
-    <p style="max-width:600px;margin:0 auto 18px;font-size:.92em">D&amp;D-style rules: d20 checks, advantage, leveling, shops &amp; training — and backstories that <b>unlock unique paths</b> through a two-campaign, twelve-chapter saga with branching endings.</p>
+    <p style="max-width:600px;margin:0 auto 18px;font-size:.92em">D&amp;D-style rules: d20 checks, advantage, leveling, shops &amp; training — and backstories that <b>unlock unique paths</b> through a two-campaign, twelve-chapter saga with branching endings — the first chapters of the nation's continuing story.</p>
     <div class="action-row">
       <button class="primary" style="font-size:1.15em;padding:14px 30px" onclick="renderCreation()">⚔ Forge Your Hero</button>
       <button style="padding:14px 22px" onclick="showLoadScreen()">📜 Continue a saved tale</button>
     </div>
+    ${SUPPORT_URL ? `<p style="margin-top:16px"><a href="${SUPPORT_URL}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">☕ Enjoying Emberfall? Buy the designer an ale</a></p>` : ""}
   </div>`;
 }
 renderTitle();

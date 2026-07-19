@@ -26,7 +26,13 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **A real armory** — every class has weapon choices with honest tradeoffs (greataxes vs. sword-and-shield, warhammers, flails, three kinds of bow, twin daggers, kamas, hand crossbows) and class-true armor rules: fighters wear anything, rangers top out at scale mail, rogues sneak worse in medium armor, and wizards rely on the Mage Armor ward — plus swappable attack cantrips and learnable spells (Burning Hands, Sleep, Lightning Bolt). Cheap field bandages and alchemist's fire round out the kit, bought in shops or looted along the way.
 
-**Branching consequences** — a five-piece evidence system decides whether the King believes you before or after the knives come out; a moral fork in Chapter 3 (enforce the councilor's gray orders, refuse publicly, or subvert them in secret) echoes into the finale; and four different fates await the villain.
+**Branching consequences** — an evidence system decides whether the King believes you before or after the knives come out; a moral fork in Chapter 3 echoes into the finale; and multiple fates await the villain.
+
+**Red herrings that bite** — not every lead is real. Planted files, framed quartermasters, and grieving "defectors" wait for investigators who fail their rolls — and carrying unverified evidence into the throne room can sink a case built on truth. Verify before you accuse.
+
+**Patrols & random encounters** — the roads between missions hold ambushes, wolf packs, overturned carts, wayside shrines, and gray riders with strange seals. Leveling is earned now: story missions alone won't carry you, and the wise hero rides patrol.
+
+**A nation's story, beginning** — Thorne answered to someone. The gray wax seal of the Second Chair waits in the epilogue, and future campaigns will carry the fight to the rest of the realm.
 
 **A living soundscape, still one file** — a warm royalty-free fantasy ambient score is embedded right in the game and adapts to the fiction: full and bright in town, quieter on the road, and ducked low beneath synthesized war drums and dread drones when blades come out. Every sound effect is synthesized in your browser at the moment it plays: dice clatter, sword rings and crits, coin clinks, healing chimes, war-cry growls, spell shimmers, and a level-up fanfare. Toggle sound and music anytime from the corner controls.
 
