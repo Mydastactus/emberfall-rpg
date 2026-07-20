@@ -179,6 +179,15 @@
   .hidden { display: none !important; }
   .fade-in { animation: fadeIn .5s ease; }
   #audio-ctl { position: fixed; top: 10px; right: 12px; z-index: 50; display: flex; gap: 6px; }
+  #sheet-ctl { position: fixed; top: 10px; right: 110px; z-index: 50; display: none; }
+  #sheet-ctl button { padding: 6px 10px; font-size: 1em; opacity: .85; }
+  .scene-portrait svg { width: 96px; height: 96px; }
+  .combatant .portrait svg { width: 74px; height: 74px; }
+  .hs-portrait svg { width: 56px; height: 56px; vertical-align: middle; margin-right: 10px; }
+  .side-mini svg { width: 30px; height: 30px; vertical-align: middle; margin-right: 6px; }
+  #hero-sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(8,6,4,.82); z-index: 100; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 24px 12px; }
+  #hs-box { background: var(--panel); border: 1px solid var(--gold); border-radius: 12px; max-width: 760px; width: 100%; padding: 22px 26px; position: relative; box-shadow: 0 8px 40px rgba(0,0,0,.7); }
+  #hs-close { position: sticky; top: 0; float: right; z-index: 2; }
   #audio-ctl button { padding: 6px 10px; font-size: 1em; opacity: .75; }
   #audio-ctl button:hover { opacity: 1; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -194,6 +203,35 @@
 <script>
 "use strict";
 const SUPPORT_URL = ""; // set to your Ko-fi/BuyMeACoffee link to show the in-game support button
+
+/* ---- autosave (feature-detected; save codes remain the manual backup) ---- */
+const Store = (() => {
+  try {
+    const t = "__ef_test__";
+    window.localStorage.setItem(t, "1");
+    window.localStorage.removeItem(t);
+    return {
+      ok: true,
+      get: k => { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+      set: (k, v) => { try { window.localStorage.setItem(k, v); } catch (e) {} },
+      del: k => { try { window.localStorage.removeItem(k); } catch (e) {} }
+    };
+  } catch (e) {
+    return { ok: false, get: () => null, set: () => {}, del: () => {} };
+  }
+})();
+const AUTOSAVE_KEY = "emberfall_autosave";
+function autosave() {
+  if (!Store.ok || !C || (combat && !combat.over)) return;
+  try {
+    Store.set(AUTOSAVE_KEY, makeSaveCode());
+    Store.set(AUTOSAVE_KEY + "_meta", JSON.stringify({ name: C.name, level: C.level, chapter: flags.chapter, cls: C.cls.name }));
+  } catch (e) {}
+}
+function autosaveMeta() {
+  if (!Store.ok) return null;
+  try { const m = Store.get(AUTOSAVE_KEY + "_meta"); return m ? JSON.parse(m) : null; } catch (e) { return null; }
+}
 /* ============================================================
    AUDIO — synthesized SFX & adaptive ambience (no files, no loading)
    ============================================================ */
@@ -712,16 +750,16 @@ const MONSTERS = {
   worg:     { name: "Worg", icon: "🐺", hp: 20, ac: 13, atk: 5, dmg: [2, 6, 2], xp: 150, tr: { morale: "steady", moves: ["pack", "hamstring"] } },
   guard:    { name: "Hobgoblin Guard", icon: "👹", hp: 16, ac: 15, atk: 5, dmg: [1, 8, 2], xp: 100, tr: { morale: "steady", moves: ["shieldbash"] } },
   hobgoblin:{ name: "Hobgoblin Soldier", icon: "👹", hp: 16, ac: 15, atk: 5, dmg: [1, 8, 2], xp: 100, tr: { morale: "steady", moves: ["shieldbash"] } },
-  grukk:    { name: "Lieutenant Grukk", icon: "😈", hp: 26, ac: 15, atk: 5, dmg: [2, 4, 3], xp: 300, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
+  grukk:    { pkey: "grukk", name: "Lieutenant Grukk", icon: "😈", hp: 26, ac: 15, atk: 5, dmg: [2, 4, 3], xp: 300, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
   thug:     { name: "Hired Blade", icon: "🥷", hp: 12, ac: 13, atk: 4, dmg: [1, 6, 2], xp: 50, tr: { morale: "craven", moves: [] } },
   vex:      { name: "Captain Vex", icon: "👹", hp: 22, ac: 16, atk: 5, dmg: [1, 8, 3], xp: 250, tr: { morale: "steady", moves: ["shieldbash", "warcry"] } },
   orcBrute: { name: "Orc Brute", icon: "🧌", hp: 26, ac: 14, atk: 6, dmg: [2, 6, 2], xp: 250, tr: { morale: "steady", moves: ["cleave"] } },
   eliteGuard:{ name: "Blackpike Elite", icon: "🛡️", hp: 20, ac: 16, atk: 6, dmg: [1, 8, 3], xp: 200, tr: { morale: "steady", moves: ["shieldbash"] } },
   assassin: { name: "Veiled Assassin", icon: "🗡️", hp: 16, ac: 15, atk: 7, dmg: [1, 6, 4], xp: 250, tr: { morale: "craven", moves: ["poison"] } },
   ogre:     { name: "Siege Ogre", icon: "👹", hp: 36, ac: 13, atk: 7, dmg: [2, 8, 4], xp: 450, tr: { morale: "steady", moves: ["cleave"] } },
-  garthok:  { name: "Warlord Gar'Thok", icon: "😈", hp: 66, ac: 17, atk: 8, dmg: [2, 8, 5], xp: 900, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
-  garthokWounded: { name: "Warlord Gar'Thok (wounded)", icon: "😈", hp: 48, ac: 17, atk: 8, dmg: [2, 8, 5], xp: 900, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
-  vail:     { name: "Captain Vail", icon: "🤺", hp: 34, ac: 17, atk: 7, dmg: [1, 8, 5], xp: 500, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
+  garthok:  { pkey: "garthok", name: "Warlord Gar'Thok", icon: "😈", hp: 66, ac: 17, atk: 8, dmg: [2, 8, 5], xp: 900, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
+  garthokWounded: { pkey: "garthok", name: "Warlord Gar'Thok (wounded)", icon: "😈", hp: 48, ac: 17, atk: 8, dmg: [2, 8, 5], xp: 900, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
+  vail:     { pkey: "vail", name: "Captain Vail", icon: "🤺", hp: 34, ac: 17, atk: 7, dmg: [1, 8, 5], xp: 500, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
   /* --- Campaign 2 --- */
   assassin2:  { name: "Gray Web Assassin", icon: "🗡️", hp: 26, ac: 16, atk: 9, dmg: [1, 6, 6], xp: 350, tr: { morale: "craven", moves: ["poison"] } },
   blackpike:  { name: "Blackpike Enforcer", icon: "🥷", hp: 30, ac: 16, atk: 7, dmg: [1, 8, 4], xp: 300, tr: { morale: "steady", moves: ["shieldbash"] } },
@@ -730,8 +768,8 @@ const MONSTERS = {
   orcVet:     { name: "Orc Veteran", icon: "🧌", hp: 34, ac: 15, atk: 7, dmg: [1, 12, 4], xp: 350, tr: { morale: "steady", moves: ["cleave"] } },
   zargaGuard: { name: "Bone-Sworn Guard", icon: "💀", hp: 38, ac: 16, atk: 8, dmg: [2, 6, 4], xp: 400, tr: { morale: "steady", moves: ["shieldbash"] } },
   palaceElite:{ name: "Protectorate Elite", icon: "🛡️", hp: 40, ac: 17, atk: 8, dmg: [1, 10, 4], xp: 450, tr: { morale: "steady", moves: ["shieldbash"] } },
-  vail2:      { name: "Lord-Blade Vail", icon: "🤺", hp: 64, ac: 18, atk: 9, dmg: [2, 8, 4], xp: 900, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
-  zarga:      { name: "Warchief Zarga", icon: "😈", hp: 72, ac: 17, atk: 9, dmg: [2, 8, 5], xp: 1100, tr: { morale: "fearless", moves: ["warcry", "cleave"] } }
+  vail2:      { pkey: "vail", name: "Lord-Blade Vail", icon: "🤺", hp: 64, ac: 18, atk: 9, dmg: [2, 8, 4], xp: 900, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
+  zarga:      { pkey: "zarga", name: "Warchief Zarga", icon: "😈", hp: 72, ac: 17, atk: 9, dmg: [2, 8, 5], xp: 1100, tr: { morale: "fearless", moves: ["warcry", "cleave"] } }
 };
 
 /* ---------------- STATE ---------------- */
@@ -1051,7 +1089,7 @@ function hpBarClass() {
 function sidebar() {
   return `
   <div class="side-panel">
-    <h3>${C.race.icon} ${esc(C.name)} · Lv ${C.level}</h3>
+    <h3><span class="side-mini">${PORTRAITS[C.cls.id] || C.race.icon}</span>${esc(C.name)} · Lv ${C.level}</h3>
     <div class="card-tag">${C.race.name} ${C.cls.name} · ${C.origin.name}</div>
     <div style="font-size:.78em;color:var(--ink-dim);margin-top:2px">${esc(weaponName())} · ${esc(armorDisplayName())}</div>
     <div style="font-size:.85em; margin-top:6px">HP ${C.hp}/${C.maxHp}</div>
@@ -1088,6 +1126,7 @@ function sidebar() {
 }
 
 function renderGame(contentHtml) {
+  updateSheetBtn();
   main().innerHTML = `<div id="game-layout" class="fade-in">
     <div>${contentHtml}</div>
     <div id="sidebar-col">${sidebar()}</div>
@@ -1171,7 +1210,7 @@ function livingFoes() { return combat.foes.filter(f => f.hp > 0); }
 function renderCombat() {
   const foesHtml = combat.foes.map(f => `
     <div class="combatant ${f.hp <= 0 ? "dead" : ""}" id="foe-${f.id}">
-      <div class="portrait">${f.icon}</div>
+      <div class="portrait">${PORTRAITS[f.pkey] || f.icon}</div>
       <b>${esc(f.name)}</b>
       <div class="hp-bar-wrap"><div class="hp-bar" style="width:${Math.max(0, f.hp / f.maxHp * 100)}%"></div></div>
       <div class="card-tag">${f.hp > 0 ? f.hp + "/" + f.maxHp + " HP" : f.fled ? "🏃 fled" : "☠ slain"}</div>
@@ -1216,7 +1255,7 @@ function renderCombat() {
     ${combat.intro ? `<p class="flavor">${combat.intro}</p>` : ""}
     <div class="combat-arena">
       <div class="combatant ${C.hp <= 0 ? "dead" : ""}" id="pc-portrait">
-        <div class="portrait">${C.race.icon}</div><b>${esc(C.name)}</b>
+        <div class="portrait">${PORTRAITS[C.cls.id] || C.race.icon}</div><b>${esc(C.name)}</b>
         <div class="hp-bar-wrap"><div class="hp-bar ${hpBarClass()}" style="width:${Math.max(0, C.hp / C.maxHp * 100)}%"></div></div>
         <div class="card-tag">${C.hp}/${C.maxHp} HP · AC ${playerEffAC()}</div>
         ${playerStatusChips()}
@@ -1776,6 +1815,7 @@ function templeRevival() {
   C.gold = Math.floor(C.gold / 2);
   C.hp = C.maxHp;
   combat = null;
+  autosave();
   logRoll("🕯 Revived", "The Dawnmother's priests demand a donation. Half your purse, to be exact.", "fail");
   if (flags.inFinale2) goScene("c12_stage");
   else if (flags.inFinale && flags.chapter <= 6) goScene("m6_stage");
@@ -1785,6 +1825,7 @@ function templeRevival() {
 function restartAll() {
   creation = { step: 0, name: "", race: null, cls: null, scores: {}, pool: [], method: null, origin: null, event: null, motive: null };
   C = null; flags = {}; diceLogEntries = [];
+  try { updateSheetBtn(); closeHeroSheet(); } catch (e) {}
   renderTitle();
 }
 
@@ -1834,7 +1875,7 @@ function scene(art, title, paras, choices, extraHtml) {
   </div>`);
 }
 
-function goScene(id) { SCENES[id](); setAmbientForScene(id); }
+function goScene(id) { SCENES[id](); setAmbientForScene(id); flags.lastScene = id; autosave(); }
 
 function bkReq(label) { return `— ${label}`; }
 
@@ -1879,6 +1920,7 @@ function makeSaveCode() {
       opsDone: flags.opsDone || [], bramSaved: !!flags.bramSaved, zargaDeal: !!flags.zargaDeal,
       baronsWon: flags.baronsWon || 0, kingRestored: !!flags.kingRestored, decoyRefused: !!flags.decoyRefused,
       herring1Done: !!flags.herring1Done, herring1Solved: !!flags.herring1Solved, herringWidowDone: !!flags.herringWidowDone,
+      mootDone: flags.mootDone || null,
       embarrassed: !!flags.embarrassed, patrolC: flags.patrolC || 0, lastPatrolChapter: flags.lastPatrolChapter || 0 }
   };
   return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
@@ -1904,6 +1946,8 @@ function loadSaveCode(code) {
     creation = { step: 0, name: C.name, race, cls, origin, event, motive, scores: {}, pool: [], method: null };
     C.backstoryProse = buildBackstoryProse();
     flags = Object.assign({ m: {}, evidence: [], chapter: 1, thorneTrust: 0, citizenRep: 0 }, dta.flags, { m: {} });
+    if (!flags.mootDone && (flags.baronsWon || 0) > 3) { flags.baronsWon = 0; } // heal saves from the moot-loop bug: replay the moot cleanly
+    if (flags.mootDone && flags.mootDone.length >= 3) flags.baronsWon = Math.min(flags.baronsWon || 0, 3);
     C.weaponId = dta.weaponId || DEFAULT_WEAPON[cls.id];
     C.armorId = dta.armorId || DEFAULT_ARMOR[cls.id];
     C.shield = dta.shield !== undefined ? dta.shield : cls.id === "cleric";
@@ -2043,7 +2087,7 @@ function forgeScene() {
         ? (shieldActive() ? `<button disabled>✦ 🛡 Shield <span class="req">— equipped (+2 AC)</span></button>` : `<button disabled>🛡 Shield <span class="req">— owned, but your two-handed weapon leaves no hand for it</span></button>`)
         : `<button onclick="buy(25,()=>{C.shield=true;recomputeAC();logRoll('⚒ Purchased','Shield: +2 AC with a one-handed weapon','success')});goScene('forge')" ${C.gold < 25 ? "disabled" : ""}>🛡 Shield — <b>25g</b> <span class="req">+2 AC while wielding a one-handed weapon</span></button>`)
     : "";
-  scene("⚒", "Brannock's Forge",
+  scene(pArt("brannock"), "Brannock's Forge",
     [ `Brannock is a slab of a dwarf with burn-scarred forearms and no patience for browsing. "Buy something or bellows for me. Those are the options."`,
       `<i>Your arm: <b>${weaponName()}</b> · Your armor: <b>${armorDisplayName()}</b> (AC ${C.ac})</i>`,
       isWiz ? `<i>🧙 Brannock squints at you. "Wizard armory's a cantrip and a laundry bill. Zephyrine handles your sort — I do the ENCHANTING SURCHARGE tiers below, that's all."</i>` : `` ].filter(Boolean),
@@ -2059,7 +2103,7 @@ function forgeScene() {
 }
 
 function curiositiesScene() {
-  scene("🔮", "Zephyrine's Curiosities",
+  scene(pArt("zephyrine"), "Zephyrine's Curiosities",
     [ `The shop smells of ozone and dried lavender. Zephyrine — silver-eyed, age indeterminate — appears between shelves without quite walking there. "Ah. The one the dice talk about. Browse, browse."`,
       C.event.id === "fey" ? `<i>🦋 She peers at you, delighted. "Fey-touched! You get the FRIEND prices."</i>` : `` ].filter(Boolean),
     [], `<div class="choices">
@@ -2129,7 +2173,7 @@ function prologueScene() {
     soldier: `"A camp childhood. Then you know what discipline is worth — and what it costs. The realm sleeps soundly because people like you don't."`,
     scholar: `"A scholar's hand! Wasted on sword-work, some would say — but not me. The realm has plenty of swords. It's short on people who think."`
   }[C.origin.id];
-  scene("🏰", "Ironvale, City of the Iron Vale",
+  scene(pArt("thorne"), "Ironvale, City of the Iron Vale",
     [ `<i>${C.backstoryProse}</i>`,
       `The road ends at <b>Ironvale</b> — granite walls, banner-hung towers, the seat of good <b>King Alden</b>. But the market queues are long, the faces are tight, and the word on every lip is <i>goblins</i>.`,
       `Your reputation (or your sword-arm, or your luck) precedes you: an invitation finds you within the hour, written in a warm, looping hand, to the Gilded Griffin's best table. There sits <b>High Councilor Thaddeus Thorne</b> — silver-bearded, kind-eyed, the sort of grandfather the whole city seems to share. He stands to greet you. He remembers your name. He has already ordered you the good ale.`,
@@ -2140,7 +2184,7 @@ function prologueScene() {
 }
 
 function prologue2Scene() {
-  scene("🍺", "One More Round",
+  scene(pArt("thorne"), "One More Round",
     [ `Thorne waves for another and asks — actually asks — about your life. Where you were raised. What you're after. He listens the way few powerful men listen: leaning in, ale forgotten, laughing in the right places. When you mention ${C.motive.name.toLowerCase()}, he nods slowly. "That's a worthy road. Harder than most. If an old man's purse or an old man's ear can ever help you walk it — my door is open."`,
       `He pays for everything, tips like a guilty man, and grips your shoulder on the way out. "Safe roads, friend. I mean that."`,
       `<i>You can't remember the last time anyone in power looked at you like a person.</i>` ],
@@ -2150,20 +2194,20 @@ function prologue2Scene() {
 function councilScene() {
   const ch = flags.chapter;
   if (ch === 1) {
-    scene("🏛", "The Council Hall",
+    scene(pArt("thorne"), "The Council Hall",
       [ `Thorne rises the moment he sees you, and the relief on his face is a whole speech. "You're on your feet. Thank the Dawnmother — when they carried you in, I..." He steadies himself, and slides the purse back across the table, still full. "The medicine is still out there, my friend. The sick are still waiting. I would send no one else."`,
         `The trail to the goblin camp is a day older, but trails keep.` ],
       [ { txt: "🌄 Ride out again — the medicine train won't recover itself", onclick: "startMission('m1_road')" },
         { txt: "🏙 Not yet — see to business in the city first", onclick: "goScene('town')" } ]);
   } else if (ch === 2) {
-    scene("🏛", "The Council Hall",
+    scene(pArt("thorne"), "The Council Hall",
       [ `Thorne meets you on the steps, waving off two clerks. Since the medicine train, the raids have doubled — and last night the <b>Westmill grain barges</b> burned at their moorings.`,
         `"We found where they nest." He unrolls a map — the warren of <b>Craghollow Ridge</b>, marked in exacting detail: entrances, guard posts, even patrol timings. "One of Gar'Thok's lieutenants — a brute called <b>Grukk</b> — runs raids from these caves. Cut him out and we buy the valley a season of peace." He hesitates, then adds quietly: "I've marked everything my sources could gather. I'd never forgive myself if you walked in blind."`,
         `<i>The map is remarkable. You've seen royal survey work with less detail. Where does a councilor get intelligence like this?</i>` ],
       [ { txt: "⛰ March on Craghollow Ridge", onclick: "startMission('m2_gate')" },
         { txt: "🏙 Not yet — see to business in the city first", onclick: "goScene('town')" } ]);
   } else if (ch === 3) {
-    scene("🏛", "The Council Hall",
+    scene(pArt("thorne"), "The Council Hall",
       [ `The hall is louder now — merchants shouting about the Duskway closures, a Duke's clerk reading casualty lists. Thorne draws you into his study, and for the first time he looks old.`,
         `"Craghollow was a victory — YOUR victory — but the raids haven't stopped. They've gotten <i>smarter</i>. And the city..." He rubs his eyes. "The city is a tinderbox. Which is why the council has passed the <b>Centralized Defense Act</b>. Private arms are to be collected into the city armories — for redistribution to trained defenders. A curfew, dusk to dawn. Ugly measures. Necessary ones."`,
         `He hands you a writ with your name on it. "People trust <i>you</i>. If the collection teams are led by the hero of Craghollow, it stays peaceful. If it's left to the Blackpikes..." he grimaces. "Please. Keep it gentle."`,
@@ -2327,7 +2371,7 @@ function m2_warren() {
       { txt: "🥁 Ahead — Grukk", onclick: "goScene('m2_grukk_talk')" } ].filter(Boolean));
 }
 function m2_prisoner() {
-  scene("⛓", "The Holding Cell",
+  scene(pArt("sera"), "The Holding Cell",
     [ `Behind a rusted grate: a weathered woman in trapper's leathers, who takes your measure in one glance and grins through a split lip. "Well. Rescue's better-armed than I expected. Name's <b>Sera</b> — they took me on the ridge road three days back."`,
       `She jerks her chin toward the drum. "The big one, Grukk — he gets <i>visitors</i>. Human ones. Cloaked, city boots, always at night. I hear coin change hands." She grips the bars. "Get me out. I fight better than I look."` ],
     [ C.items.includes("Lockpicks") ? { backstory: true, txt: "🔓 Pick the lock — alley skills never rust", req: bkReq("Street Urchin"), onclick: "m2_free(true)" } : null,
@@ -2374,7 +2418,7 @@ function m2_armory_loot() {
     [ { txt: "← Back to the junction", onclick: `C.gold += 40; C.items.push("Alchemist's Fire"); logRoll('💰','+40 gold from the cache','success'); goScene('m2_warren')` } ]);
 }
 function m2_grukk_talk() {
-  scene("😈", "The Drum-Chamber",
+  scene(pArt("grukk"), "The Drum-Chamber",
     [ `Goblins scatter to the walls as you enter. On a throne of stacked crates — <i>merchant crates, stamped with Ironvale trade-seals</i> — lounges a hobgoblin the size of a door: <b>Lieutenant Grukk</b>.`,
       `"The hero," he rumbles, unhurried. "Killed Snagfang. Cost me a month of medicine-profit." He rises, hefting a two-handed cleaver. "Gar'Thok says the plan needs martyrs on both sides. Guess which one you are."`,
       flags.m.freed ? `Sera has already melted into the shadows behind the crate-throne.` : `` ].filter(Boolean),
@@ -2385,7 +2429,7 @@ function m2_grukk_talk() {
 function m2_intimidate() {
   const res = sceneCheck("Intimidation", 14);
   if (res.success) flags.m.shaken = true;
-  scene("😈", "A Name Almost Spoken",
+  scene(pArt("grukk"), "A Name Almost Spoken",
     [ res.success
         ? `Something crosses Grukk's face — quick, involuntary, the look of a creature that has BEEN afraid of someone. "You'll meet him soon enough," he growls, but his knuckles are white on the cleaver haft, and his first step toward you is a half-step. <i>(His attacks weaken!)</i>`
         : `Grukk laughs like rocks in a barrel. "Names? I sell raids, not names. Prices you couldn't pay."`,
@@ -2472,7 +2516,7 @@ function m3_afterThugs() {
    MISSION 4 — THE POISONED GIFT (Level 4)
    ============================================================ */
 function m4_brief() {
-  scene("👑", "The King's Charge",
+  scene(pArt("alden"), "The King's Charge",
     [ `Alden spreads a map with his own hands — no clerks, no ceremony. "Redwatch fort. Old border bastion, twenty miles east. Gar'Thok's creatures have taken it and choked the east road — the last trade artery this city has left." His jaw works. "I'd lead the assault myself, but Thaddeus is right — the crown can't keep leaving the capital every time a goblin sneezes."`,
       `He hands you a <b>Royal Writ</b> — your authority to act in the crown's name — and something else: a worn silver charm on a chain. "<b>Wyrmbane</b>. My father carried it at the Battle of the Fords, and it turned blades that should have killed him. I'm told you've earned the kind of enemies that make it useful." <b>(+1 AC, permanently.)</b>`,
       `"Only the war council knows your route — myself, the marshal, and Thaddeus. Move fast, strike hard, come home. That's a royal order." He grips your forearm. And for a heartbeat, the King of Ironvale looks simply like a tired man asking a friend for help.` ],
@@ -2558,7 +2602,7 @@ function m4_accuse() {
   const w = evidenceWeight();
   if (w >= 4 && hasFalseEvidence()) {
     flags.accusedEarly = true;
-    scene("👑", "The Chain Breaks at Its Weakest Link",
+    scene(pArt("alden"), "The Chain Breaks at Its Weakest Link",
       [ `You lay out the case — and it begins well. The coins. The seals. Alden's face grows graver by the minute... until his examiner reaches the ${flags.evidence.includes("smugglerNote") ? "smugglers' manifest" : "unverified papers"} in your stack, and takes it apart in four sentences.`,
         `"Forged stock. Copied hand. Planted, sire — and swallowed." The examiner does not look up. Neither, now, does the King.`,
         `"You bring me true things and false things in the same satchel," Alden says at last, wearily, "and ask me to behead a friendship on the difference. <b>Come back when you know which is which.</b>" You are escorted out. The good evidence went down with the bad — that is what false leads are FOR.` ],
@@ -2567,14 +2611,14 @@ function m4_accuse() {
   }
   if (w >= 4) {
     flags.kingDoubt = true;
-    scene("👑", "The Seed of Doubt",
+    scene(pArt("alden"), "The Seed of Doubt",
       [ `Alden listens in absolute stillness — the coin match, the forge-marks, the sealed route. When you finish, the silence stretches so long you hear the torches burn.`,
         `"Thaddeus held my son at his naming," he says at last, quietly. "He talked me out of two wars and into three hospitals. What you're describing isn't a traitor. It's a lifetime." He looks up, and his eyes are terrible. "And yet I cannot make your coins unmatch, or that seal unstamp itself."`,
         `"Bring me his HAND, adventurer. His ledger, his letters, his cipher — something no rival could have forged to ruin a good man. Bring me that, and I will do what a king must. Until then—" his voice cracks, very slightly, "—I beg you, be wrong."` ],
       [ { txt: "🐺 Then you'll bring him the warlord's own ledger", onclick: "flags.chapter = 5; goScene('town')" } ]);
   } else {
     flags.accusedEarly = true;
-    scene("👑", "The Lion Defends the Snake",
+    scene(pArt("alden"), "The Lion Defends the Snake",
       [ `You lay out what you have. It sounds thinner in the throne room than it did in your head — a stamp here, a rumor there.`,
         `Alden's face closes like a portcullis. "Thaddeus Thorne? The man who funded our hospitals? Who sat vigil at my queen's deathbed?" He rises from the throne, and the room shrinks. "<b>Do not insult my councilor again, adventurers.</b> The next accusation you bring against him had best carry proof heavy enough to crack stone — or it will be YOUR name this court remembers, and not kindly."`,
         `You are escorted out. Politely. Barely.` ],
@@ -2586,7 +2630,7 @@ function m4_accuse() {
    MISSION 5 — THE WARLORD'S LEDGER (Level 5)
    ============================================================ */
 function m5_meet() {
-  scene("🌲", "The Treeline",
+  scene(pArt("sera"), "The Treeline",
     [ `Sera is exactly where the whisper promised, cross-legged on a deadfall, cleaning her nails with a skinning knife. ${flags.seraFriend ? `"Took you long enough," she says, but she's grinning. She clasps your forearm like a comrade.` : `She looks you over once. "The Craghollow hero. Good — I don't work with amateurs."`}`,
       `"Gar'Thok's war camp is two valleys east. Four hundred spears and growing — and here's the meat of it: I watched a <b>cloaked rider</b> come up from the city road by night, twice. City boots. Soft hands. Gold going in, orders coming out." She sketches the camp in the dirt: pickets, horse-lines, and a great central tent. "Whatever ties the warlord to his paymaster, it lives in <b>that tent</b>. I can get you to the wire. After that, it's your show."` ],
     [ { txt: "🎭 Walk in disguised as a sellsword come to sign on", req: "(Deception, DC 13" + (C.origin.id === "soldier" ? " — advantage: you can wear a war-camp like a uniform" : "") + `) <span class="win">✓ stroll to the tent unchallenged</span> · <span class="lose">✗ named a spy — fight through an alerted camp</span>`, onclick: `m5_disguise(${C.origin.id === "soldier" ? "true" : "false"})` },
@@ -2672,7 +2716,7 @@ function m6_king() {
   if (flags.kingBelieved) return goScene("m6_gate");
   const w = evidenceWeight();
   if (w >= 5 && hasFalseEvidence()) {
-    scene("👑", "One Bad Coin Spoils the Purse",
+    scene(pArt("alden"), "One Bad Coin Spoils the Purse",
       [ `You find Alden armoring for the walls and lay out everything — and everything is nearly enough. Then his examiner reaches the unverified papers in your satchel and pulls the thread, and you watch a fortress of proof develop one visible crack.`,
         `"The rest may be gold," the King says, quiet and terrible, "but you handed me a counterfeit WITH it, and tonight of all nights I cannot afford one." His hand closes on the ledger anyway — wanting to believe. "Prove you know true from false. Then we finish this."`,
         `<i>(Purge the false evidence — the Chronicler's Quill can't help you here; only the night can.)</i>` ],
@@ -2681,20 +2725,20 @@ function m6_king() {
   }
   if (w >= 5) {
     flags.kingBelieved = true;
-    scene("👑", "The Breaking Point",
+    scene(pArt("alden"), "The Breaking Point",
       [ `You find Alden armoring for the walls, and you put the wolf-hide ledger in his hands.`,
         `He reads standing. Then sitting. The war-noise outside fades to nothing. You watch a big man get smaller, page by page — the medicine train, the granary, the burnt farms, each with its price in sunburst coin. When he reaches the ciphered letters he stops needing the cipher; kings learn their friends' hands young. ${flags.kingDoubt ? "\"You warned me,\" he says, to no one. \"You warned me and I begged you to be wrong.\"" : ""}`,
         `"Forty years." His voice is gravel and glass. "He carried my father's shield at the Fords. He held my SON at his naming, adventurer." The King of Ironvale closes the ledger with the gentleness of a man closing a coffin lid. When he looks up, the grief has been forged into something with an edge.`,
         `"The snake wants my city panicked and my sword abroad. He will have neither. You gave me the truth — now stand with me while I spend it. <b>The wall first. Then the podium.</b>"` ],
       [ { txt: "⚔ To the wall, beside the King", onclick: "goScene('m6_gate')" } ]);
   } else if (w >= 2 && !flags.accusedEarly) {
-    scene("👑", "Not Enough — Almost",
+    scene(pArt("alden"), "Not Enough — Almost",
       [ `Alden turns your evidence over with hands that want to disbelieve it. "Stamps. Seals. A merchant's grief." He shakes his head slowly. "Against forty years, it's smoke. Show me his HAND, and I'll show you the King's justice — but I will not behead my oldest friendship on smoke." ${flags.accusedEarly ? "\"And you have spent your second chance already,\" he adds, not unkindly." : ""}`,
         `That night, you keep watch near the royal wing anyway — because if you're right, the King's continued breathing is an obstacle to somebody's schedule.`,
         `An hour past midnight, two shadows detach from the servants' stair, moving with rehearsed silence toward the King's chamber. <b>You were right.</b>` ],
       [ { txt: "⚔ Intercept the assassins!", onclick: "m6_assassins()" } ]);
   } else {
-    scene("👑", "Thrown from the Hall",
+    scene(pArt("alden"), "Thrown from the Hall",
       [ `"<b>Do not insult my councilor again.</b>" The King's voice could crack the flagstones. With the city besieged and his Duke dead, your half-formed accusations read as madness — or malice. Guards walk you out.`,
         `So you do the only thing left: you watch. All night, from the shadows by the royal wing — because if you're right, the King is now the last obstacle on somebody's list.`,
         `An hour past midnight, two shadows slip up the servants' stair toward the King's chamber, knives held low. <b>You were right. Being right is about to get loud.</b>` ],
@@ -2709,7 +2753,7 @@ function m6_assassins() {
 }
 function m6_afterAssassins() {
   flags.kingBelieved = true;
-  scene("👑", "The Scales Fall",
+  scene(pArt("alden"), "The Scales Fall",
     [ `The second assassin dies with a Blackpike-issue blade still in his grip, and a purse of <b>sunburst-minted coin</b> spills across the King's carpet. Alden stares at it for a long, long moment. Coins. Boots. Blades. He is a proud man, but he has never been a fool — merely a loyal one.`,
       `"Forty years," he says quietly, and picks up one bright coin. "You tried to tell me. The court will remember it was YOU who tried to tell me." He is already reaching for his armor. "The snake timed his theater for dusk. The wall first, adventurer — my city will not fall while I settle my accounts. <b>Then the podium.</b>"` ],
     [ { txt: "⚔ To the wall, beside the King", onclick: "C.gold += 40; logRoll('💰','+40 gold from the assassins\\' purses','success'); goScene('m6_gate')" } ]);
@@ -2729,7 +2773,7 @@ function m6_gateFight() {
 }
 function m6_garthok_talk() {
   const hasLedger = flags.evidence.includes("ledger");
-  scene("😈", "The Warlord at the Breach",
+  scene(pArt("garthok"), "The Warlord at the Breach",
     [ `The breach holds — barely — and the horde's charge breaks against it. Then the drums change, and the press of bodies parts like water.`,
       `<b>Warlord Gar'Thok</b> walks through the ruined gate alone, because he can. Seven feet of scarred muscle under black iron, a greataxe over one shoulder still wet from the wall's defenders. He looks at the carnage, at you, and — unhurried — takes your measure.`,
       `"The ledger-thief." His voice is a landslide with opinions. "You cost me my insurance. So I came to collect it back — with the city attached."` ],
@@ -2740,13 +2784,13 @@ function m6_doubleCross() {
   const res = sceneCheck("Persuasion", 13);
   if (res.success) {
     flags.garthokTold = true;
-    scene("😈", "Honor Among Thieves — Almost",
+    scene(pArt("garthok"), "Honor Among Thieves — Almost",
       [ `Gar'Thok goes very still. "The gray man," he rumbles, "promised the gate guard would be BOUGHT tonight. It was not. Promised the King would be ABROAD. He is not." His eyes, small and shrewd, weigh you like coin. "And now his errand-blade tells me my name is next on his ledger. That, I believe. Snakes are only ever consistent about their nature."`,
         `He raises one fist. Across the field, the drums stop. "I will deal with you, thief — because you fight like something worth killing. But when we are done here, whatever is left of me marches on a PODIUM." He grins, and it is a terrible thing. "Two debts, one night."`,
         `Then the axe comes off his shoulder, and the world narrows.` ],
       [ { txt: "⚔ Finish it — warlord to hero", onclick: "m6_garthokFight(true)" } ]);
   } else {
-    scene("😈", "Not For Sale",
+    scene(pArt("garthok"), "Not For Sale",
       [ `Gar'Thok laughs — an avalanche with a sense of humor. "You think I don't KNOW what he is? Snake pays in good coin. Dead snake pays nothing." The axe comes off his shoulder. "Kill the thief. Sack the city. Collect from the snake at leisure. My bookkeeping is SIMPLE."` ],
       [ { txt: "⚔ Then it ends here", onclick: "m6_garthokFight(false)" } ]);
   }
@@ -2771,7 +2815,7 @@ function m6_confront() {
   const w = evidenceWeight();
   const believed = flags.kingBelieved;
   const hasLedger = flags.evidence.includes("ledger");
-  scene("🏛", "The Podium",
+  scene(pArt("thorne"), "The Podium",
     [ `The Grand Square is a sea of frightened torchlight. And there he is — silver-bearded, grave, grandfatherly — hands raised over HIS city. "...and though it breaks my heart, the crown has FAILED us, and so it falls to US, the people, to—"`,
       `He sees you. Mid-sentence. Sees the King's banner behind you, and the wolf-hide bundle under your arm.`,
       `To his credit — his single, final credit — High Councilor Thaddeus Thorne does not run. He smiles the warm smile from the Gilded Griffin, the one that remembers everyone's name, and he says, gently, to the whole square: "My friends. It seems even our heroes have been touched by the madness of these days."` ],
@@ -2906,7 +2950,7 @@ function c7_open() {
     flight: `They never found Thorne. Half a year of quiet — and then, one gray morning, he simply <b>returned</b>, walking through the main gate with lawyers instead of guards, "to answer these slanders like a free man of conscience."`,
     wolves: `They buried what the crossroads patrol found — and half a year later, a living Thaddeus Thorne walked through Ironvale's gate. "An assassin wearing my face," he explained sadly, of the corpse. "The realm's enemies wanted me dead so the truth would die with me." He'd even had the double's teeth arranged in advance.`
   }[flags.thorneFate || "justice"];
-  scene("⚖", "The Royal Commission",
+  scene(pArt("thorne"), "The Royal Commission",
     [ `<i>${fateLine}</i>`,
       `The Royal Commission of Inquiry sits for nine days. Its findings, read to a packed square: the wolf-hide ledger is a <b>forgery</b> — its paper milled two years after its earliest entries, its cipher "planted by parties unknown to defame a servant of the realm." Three experts swear to it. Two of them are new to the city. All of them are thorough.`,
       `You know what you carried out of that war camp. It doesn't matter. The law has spoken, and the law's paper was swapped somewhere between the evidence vault and the bench.`,
@@ -2937,7 +2981,7 @@ function c7_after() {
 /* ---------- CHAPTER 8 — THE SECOND SIEGE & THE FRAME ---------- */
 function c8_brief() {
   flags.m = {}; flags.checkpoint = "c8_brief";
-  scene("🔥", "The Second Siege",
+  scene(pArt("thorne"), "The Second Siege",
     [ `It comes exactly as Sera predicted. Warchief <b>Zarga's</b> horde pours out of the eastern hills — larger than her father's, better fed, patient. The gates close. The bread lines stretch. The siege of Ironvale begins again, and this time the granaries were already half-empty before the first arrow flew.`,
       `On the ninth day, Thorne summons you — arm still in its martyr's sling, eyes warm as ever. "My friend. The relief column from Duskhaven — food, medicine, four hundred wagons of survival — needs the one escort no goblin will dare test." He takes your hands in both of his. "I would trust no one else. Bring our people their bread."`,
       `Sera's warning burns in your pocket: <i>"He's moving YOU. Whatever he needs the city not to see, it happens while you're gone. But if the column's real and you refuse — people starve. His trap has two doors."</i>` ],
@@ -2961,7 +3005,7 @@ function c8_watch() {
     [ { txt: "⚔ Dawn comes. Break out of the holding yard.", onclick: "startCombat(['blackpike','thug'], 'c8_return', { intro: 'The yard sergeant finds your face on a list he pretends not to have. His mistake is mentioning it.' })" } ]);
 }
 function c8_return() {
-  scene("🔔", "The Staged Miracle",
+  scene(pArt("thorne"), "The Staged Miracle",
     [ `You return to a city gone mad with joy.`,
       `The siege is <b>over</b>. Zarga's entire horde struck its camps in a single night and melted into the eastern woods — unbeaten, unbought, unexplained. And on the royal balcony, before ten thousand starving, weeping citizens, stands Thaddeus Thorne, proclaiming the "miracle of Ironvale": his own Blackpike militia's daring night raid on the horde's supply caches, which "by the Dawnmother's grace, broke the monsters' will."`,
       `Then his face crumples — masterfully — and he raises a parchment heavy with the royal seal.`,
@@ -3054,7 +3098,7 @@ function c9_opA_sneak(auto) {
 function c9_opA_done() {
   flags.opsDone.push("A"); flags.bramSaved = true;
   addTruth(20, flags.m.quiet ? "the deserter who vanished from a sealed yard — the city loves a mystery" : "the crowd saw the 'deserter' rescued — and saw who bled");
-  scene("🛡", "A Blade Returned",
+  scene(pArt("bram"), "A Blade Returned",
     [ flags.m.quiet ? `By dawn the stocks hold nothing but the placard, re-lettered in someone's confident hand: <b>LIES</b>. The Protectorate hangs an empty rope, and the whole city hears about it by noon.` : `The scaffold burns behind you — Bram's idea — and the crowd's silence on the way out was not the silence of disapproval.`,
       `In the Ember, Ser Bram grips your forearm. "The King didn't flee," he says, low and fierce. "I was ON that detail as far as the door — reassigned at the last hour, which is the only reason I'm not branded with the rest. He was <b>sent</b>, hero. Persuaded by someone he trusted with intelligence no one else had seen. You find my King, and I'll put this arm between you and anything." <b>(Ser Bram joins the Ember. +250 XP)</b>` ],
     [ { txt: "🗺 Back to the war table", onclick: "grantXp(250,'Op: Gallows'); C.gold += 50; goScene('c9_ops')" } ]);
@@ -3094,14 +3138,14 @@ function c9_opC() {
   }
 }
 function c9_crackdown() {
-  scene("🤺", "The Crackdown",
+  scene(pArt("vail"), "The Crackdown",
     [ `Two operations in ten days. The reply comes on the eleventh: Blackpike companies flood the tannery district, and this sweep is no curfew theater — they have the pattern, near enough. The Ember scatters down its bolt-holes ahead of them.`,
       `You draw off the pursuit yourself, and in a torchlit fish-market you finally meet her: <b>Lord-Blade Vail</b>, the Protector's duelist, unhurried amid her enforcers. You've crossed blades with her kind of stillness before — or your King has.`,
       `"The loyalist," she says, almost warmly. "He speaks of you at council, you know. Fondly. Like a favorite blade he regrets leaving in the rain." Two enforcers move to flank. She doesn't draw. "Orders are observation only — tonight. Kill these two quickly, would you? They inform on ME as well."` ],
     [ { txt: "⚔ Oblige her", onclick: "startCombat(['blackpike','blackpike'], 'c9_end', { ally: flags.bramSaved ? { name: 'Ser Bram', atk: 7, dmg: [1, 8, 4] } : { name: 'Sera', atk: 6, dmg: [1, 6, 4] }, intro: 'Vail steps back into the smoke to watch. The enforcers, unaware they are also an audition, close in.' })" } ]);
 }
 function c9_end() {
-  scene("🌙", "What Vail Knows",
+  scene(pArt("vail"), "What Vail Knows",
     [ `When it's done, Vail is still there, considering you across the fish-stalls with professional appreciation. "He's afraid of you," she says. "He doesn't know it yet. I find that <i>interesting</i>." She turns to go, then pauses. "The King went north dreaming of baron armies. The barons received letters a week before he arrived. If you want him, hero — he's past the Coldbrook fens by now, and winter is not his friend." A blade's courtesy, from one professional to another. Or a leash being played out. With Vail, you suspect even she no longer knows.`,
       `Sera surfaces from the bolt-holes by midnight. "Then it's time. We find the King." <b>(+300 XP)</b>` ],
     [ { txt: "🐎 North, to the wilderness", onclick: "grantXp(300,'Chapter 9: City of Lies'); C.gold += 100; flags.chapter = 10; goScene('town')" } ]);
@@ -3144,7 +3188,7 @@ function c10_king() {
     protector: `"Your city is starving quietly and disappearing loudly," you say, "and the man doing it wears your friendship like a stolen cloak. I stood up for THEM when standing was treason. I need the man who taught the realm what standing looks like. They don't need a martyr in a ruin. They need their King."`,
     wanderlust: `"I've walked every road out of Ironvale," you say, "and I just walked the only one that matters — ten days of fen, to this fire. Every road home is closed to you EXCEPT the one through his lies. It's a hard road. I happen to know it. Walk it with me."`
   }[C.motive.id];
-  scene("👑", "The Man Who Was King",
+  scene(pArt("alden"), "The Man Who Was King",
     [ `Alden sits apart from the fire, sharpening a warhammer that is already sharp — a big man made smaller by the only wound that ever got past his guard. He hears your report — the exoneration, the framing, the forged letter read to ten thousand booing citizens — without moving. When you finish, he speaks to the whetstone.`,
       `"The barons showed me the letters. My madness, my cowardice, my thieving — in dispatches that arrived before I did. Thaddeus always was <i>thorough</i>." The stone rasps. "I keep thinking: forty years. Every kindness a brick. He built me like a wall builds a gate — trusted, load-bearing, and made to be OPENED." He finally looks up, and his eyes are terrible. "Why have you come, hero? To see what's left?"`,
       `<i>${motiveLine}</i>`,
@@ -3154,7 +3198,7 @@ function c10_king() {
 }
 function c10_zarga() {
   const knows = flags.garthokTold;
-  scene("💀", "The Warchief's Court",
+  scene(pArt("zarga"), "The Warchief's Court",
     [ `Zarga's camp makes her father's look like a hunting party — palisades, drilled companies, and a bone-and-iron hall at the center flying a banner you recognize: <b>Gar'Thok's tusks</b>, quartered with her own device, an open LEDGER. The bookkeeping legacy, it seems, is literal.`,
       `You could go in quiet. Or — bold beyond bold — you could go in through the front gate under a peace-branch and treat with the warchief herself.${knows ? " She knows your name. Her father died respecting it — and marching on your intelligence." : ""}` ],
     [ { backstory: knows, txt: "🕊 Parley — walk into the bone hall under the branch and talk BUSINESS", req: (knows ? bkReq("Gar'Thok died acting on your warning — his heir keeps accounts") : "(Persuasion, DC 14 — warchiefs respect nerve)") + ` <span class="win">✓ the insurance, an ally's invoice, and no blood</span> · <span class="lose">✗ the hall doors close behind you</span>`, onclick: "c10_parley()" },
@@ -3165,7 +3209,7 @@ function c10_parley() {
   const res = flags.garthokTold ? { success: true } : sceneCheck("Persuasion", 14);
   if (res.success) {
     flags.zargaDeal = true;
-    scene("🕊", "The Warchief's Terms",
+    scene(pArt("zarga"), "The Warchief's Terms",
       [ `Zarga receives you on a throne of lashed spears, her father's cleaver mounted above it, and hears you out with her chin on her fist — a big, shrewd, patient woman with a scribe on either side. When you finish, she laughs like distant landslides.`,
         flags.garthokTold ? `"The ledger-thief. My father spent his last breath marching on your word — 'two debts, one night,' the survivors say he said. He collected ONE." She leans forward. "The gray man still owes the other."` : `"Bold little embers. My scribes said you'd come — the gray man's kingdom is the only ledger left unbalanced."`,
         `Her terms are a merchant's, delivered like a war sentence: "The gray man paid me to STOP a siege — with gold he stole from your king's own vault. Funny. But his letters also priced my successor, after harvest. I keep insurance, like my father — better than my father." A scribe lays a sealed iron case on the table. "Take the copies. Testimony too, if your moot pays for the road. In return: the horde winters east, unbought — and when the gray man falls, HIS estates settle my invoice. Ironvale confirms it under seal, King's hand." She grins, tusks and all. "Snakes pay better dead. My father taught me that. YOU taught HIM."`,
@@ -3199,21 +3243,23 @@ function c10_ledger() {
 
 /* ---------- CHAPTER 11 — THE BARONS' MOOT ---------- */
 function c11_moot() {
-  flags.m = {}; flags.checkpoint = "c11_moot";
-  flags.baronsWon = flags.baronsWon || 0;
-  flags.m.done = flags.m.done || [];
-  if (flags.m.done.length >= 3) return goScene("c11_strike");
+  flags.checkpoint = "c11_moot";
+  if (!flags.mootDone) { flags.mootDone = []; flags.baronsWon = 0; flags.m = {}; } // first entry: fresh moot (also heals saves inflated by the old bug)
+  flags.m = flags.m || {};
+  if (flags.mootDone.length >= 3) return goScene("c11_strike");
   const p = proofCount();
   scene("🏰", "The Moot of Three Banners",
     [ `Wrenhall's great barn — neutral ground by ancient custom — holds three banners and three cold-eyed magnates: <b>Baron Hallowmere</b> of the grain lands, <b>Baroness Wrenfield</b> of the iron hills, and <b>Baron Coldbrook</b> of the counting-houses. Each received Thorne's poisoned letters months ago. Each watches the returned "coward King" with carefully hedged faces.`,
       `Alden speaks first, plainly, taking the coward's letter apart line by line. Then it's your turn — the case lives in your satchel. Win them one by one. <i>(Proofs in hand: ${p}/3. Barons won: ${flags.baronsWon}/3.)</i>` ],
-    [ !flags.m.done.includes("hallowmere") ? { txt: "🌾 Baron Hallowmere — a decent man made cautious by burnt granaries. He wants to believe; he needs a REASON.", req: `(Persuasion, DC 12 — easier with proofs${hasFalseEvidence() ? ", HARDER with unverified papers" : ""}) <span class="win">✓ the grain banner dips to the King</span> · <span class="lose">✗ he hedges — "bring the city first"</span>`, onclick: "c11_baron('hallowmere')" } : null,
-      !flags.m.done.includes("wrenfield") ? { txt: "⚔ Baroness Wrenfield — iron-country blunt. Words bore her; spines don't.", req: C.origin.id === "soldier" ? bkReq("Soldier's Camp — she knows drill-yard iron when she hears it") : "(Intimidation, DC 13)", onclick: "c11_baron('wrenfield')" } : null,
-      !flags.m.done.includes("coldbrook") ? { txt: "💰 Baron Coldbrook — the counting-house. Sentiment is not a currency he accepts.", req: flags.evidence.includes("zargaLedger") ? "(Zarga's ledger speaks his native tongue)" : "(needs hard proof — or 200 gold of 'surety')", onclick: "c11_baron('coldbrook')" } : null
+    [ !flags.mootDone.includes("hallowmere") ? { txt: "🌾 Baron Hallowmere — a decent man made cautious by burnt granaries. He wants to believe; he needs a REASON.", req: `(Persuasion, DC 12 — easier with proofs${hasFalseEvidence() ? ", HARDER with unverified papers" : ""}) <span class="win">✓ the grain banner dips to the King</span> · <span class="lose">✗ he hedges — "bring the city first"</span>`, onclick: "c11_baron('hallowmere')" } : null,
+      !flags.mootDone.includes("wrenfield") ? { txt: "⚔ Baroness Wrenfield — iron-country blunt. Words bore her; spines don't.", req: C.origin.id === "soldier" ? bkReq("Soldier's Camp — she knows drill-yard iron when she hears it") : "(Intimidation, DC 13)", onclick: "c11_baron('wrenfield')" } : null,
+      !flags.mootDone.includes("coldbrook") ? { txt: "💰 Baron Coldbrook — the counting-house. Sentiment is not a currency he accepts.", req: flags.evidence.includes("zargaLedger") ? "(Zarga's ledger speaks his native tongue)" : "(needs hard proof — or 200 gold of 'surety')", onclick: "c11_baron('coldbrook')" } : null
     ].filter(Boolean));
 }
 function c11_baron(who) {
-  flags.m.done.push(who);
+  if (!flags.mootDone) flags.mootDone = [];
+  if (flags.mootDone.includes(who)) return goScene("c11_moot");
+  flags.mootDone.push(who);
   let won = false, text = "";
   const p = proofCount();
   if (who === "hallowmere") {
@@ -3245,6 +3291,7 @@ function c11_baron(who) {
     [ { txt: "→ Continue the moot", onclick: "goScene('c11_moot')" } ]);
 }
 function c11_strike() {
+  flags.baronsWon = Math.min(flags.baronsWon || 0, 3);
   scene("🗡", "Knives at the Moot",
     [ `The moot breaks for the night with ${flags.baronsWon} banner${flags.baronsWon === 1 ? "" : "s"} dipped to the King — and the Gray Web's answer arrives before the candles are out. They come through the barn's high loft, silent as falling dust: not for the barons. For <b>Alden</b>. A dead King at a moot he called would end everything neatly.`,
       `But this time the King is not alone, not deceived, and not — as the first assassin discovers upon meeting a thrown warhammer — remotely in the mood.` ],
@@ -3281,7 +3328,7 @@ function c12_open_gates() {
     [ { txt: "🏛 To the palace steps", onclick: "startCombat(['palaceElite','blackpike'], 'c12_palace', { surprise: true, ally: { name: 'King Alden', atk: 9, dmg: [1, 10, 6] }, intro: 'The remnant fights with the grimness of men whose employer is watching from a balcony.' })" } ]);
 }
 function c12_palace() {
-  scene("🤺", "The Last Door",
+  scene(pArt("vail"), "The Last Door",
     [ `The palace stairs, the long gallery, the doors of the balcony chamber — and before them, alone, unhurried, stands <b>Lord-Blade Vail</b>, sword still sheathed, watching your approach like the final line of a contract.`,
       `"He's on the balcony," she says conversationally. "Rehearsing, if you can believe it. The 'noble surrender' speech. It's quite good." She draws — one smooth whisper of steel. "I took his coin. This is where coin like that gets spent. You understand — you're the same breed. Loyal to something even when it ruins you."`,
       `She levels the blade — at you alone. "The duel, hero. Your friends pass either way; my contract names YOU. Give me an ending worth the wage."` ],
@@ -3290,7 +3337,7 @@ function c12_palace() {
 }
 function c12_vail_yield() {
   flags.vailYielded = true;
-  scene("🤺", "The Blade Yields",
+  scene(pArt("vail"), "The Blade Yields",
     [ `The duel is the hardest fight of your life — Vail is water and razors — but at the end it's her blade that rings on the marble, and the Lord-Blade goes to one knee, breathing hard, grinning like a woman finally released from a bad debt.`,
       `"WORTH the wage," she declares. "I yield — witnessed, formal." Then, rising: "Yielded blades testify, hero. It's in the old code, and I am suddenly VERY fond of the old code. Ask me on a balcony, in front of everyone, who hired the gala knife-man. Ask me who carried the gray man's letters east." A pause, and something almost like relief: "He was going to retire me 'after harvest' anyway. I read the ledger too."`,
       `<b>(Vail yields — and her testimony joins your case.)</b>` ],
@@ -3305,7 +3352,7 @@ function c12_vail_dead() {
 function c12_balcony() {
   const truth = flags.truth || 0, p = proofCount();
   const score = (truth >= 65 ? 1 : 0) + (flags.baronsWon >= 2 ? 1 : 0) + (p >= 3 ? 1 : 0) + (flags.zargaDeal ? 1 : 0) + (flags.vailYielded ? 1 : 0);
-  scene("🌅", "The Balcony",
+  scene(pArt("thorne"), "The Balcony",
     [ `The doors open on dawn. Thaddeus Thorne stands at the balcony rail where he read a forged king's confession to ten thousand people — hair combed, robes immaculate, watching the crowd fill the square below like a man reviewing his life's work. He does not run. He turns, and gives you the smile from the Gilded Griffin, the one that remembers your name, and it is only a little tired at the edges.`,
       `"The hero. Of course — it was always going to be you. Do you know, I meant every kindness? That's what none of you will ever understand. The drinks, the orphanages, the worry — all TRUE. A realm is just a ledger, friend, and I am the only one who ever loved it enough to balance it." He glances at the crowd, then back. "Well. You've brought an audience. Shall we give them an ending?"`,
       `<i>The case in your satchel: ${p}/3 proofs. The city: ${truth}/100. The banners: ${flags.baronsWon}/3. ${flags.zargaDeal ? "And east of the walls, a warchief awaits her invoice." : ""} ${flags.vailYielded ? "Beside you, a yielded Lord-Blade waits to testify." : ""}</i>` ],
@@ -3578,6 +3625,220 @@ Object.assign(EVIDENCE, {
 });
 
 /* ============================================================
+   PORTRAITS — parametric flat-vector busts, one consistent style
+   ============================================================ */
+function makePortrait(o) {
+  const skin = o.skin || "#c99b72";
+  const armor = o.armor || "#4a3c28";
+  const trim = o.trim || "#c9a227";
+  const bgTint = o.bg || "#2a2117";
+  const parts = [];
+  // backdrop + ring
+  parts.push(`<circle cx="60" cy="60" r="58" fill="${bgTint}"/>`);
+  parts.push(`<circle cx="60" cy="42" r="34" fill="#000" opacity="0.18"/>`);
+  // shoulders / garb
+  parts.push(`<path d="M14,122 Q26,80 60,78 Q94,80 106,122 Z" fill="${armor}"/>`);
+  parts.push(`<path d="M14,122 Q26,80 60,78 Q94,80 106,122 Z" fill="none" stroke="${trim}" stroke-width="2" opacity="0.55"/>`);
+  if (o.collar) parts.push(o.collar);
+  // neck + head
+  parts.push(`<rect x="52" y="62" width="16" height="14" rx="5" fill="${skin}"/>`);
+  parts.push(`<circle cx="60" cy="48" r="21" fill="${skin}"/>`);
+  // hair / headwear (behind-face pieces drawn after head where they overlap edges)
+  if (o.hairBack) parts.push(o.hairBack);
+  // ears hint
+  parts.push(`<circle cx="39.5" cy="48" r="3.4" fill="${skin}"/><circle cx="80.5" cy="48" r="3.4" fill="${skin}"/>`);
+  if (o.tusks) parts.push(`<path d="M50,60 L48,50 L54,56 Z" fill="#f0e6d0"/><path d="M70,60 L72,50 L66,56 Z" fill="#f0e6d0"/>`);
+  // eyes
+  const eye = o.eyes || "#241a10";
+  const glow = o.glowEyes ? ` filter="url(#pglow)"` : "";
+  parts.push(`<circle cx="52" cy="46" r="${o.glowEyes ? 3 : 2.3}" fill="${eye}"${glow}/><circle cx="68" cy="46" r="${o.glowEyes ? 3 : 2.3}" fill="${eye}"${glow}/>`);
+  // brows
+  parts.push(`<path d="M47,40 q5,-${o.stern ? 1 : 3} 10,-1" stroke="${o.hairColor || "#3a2c1a"}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`);
+  parts.push(`<path d="M63,${o.stern ? 38 : 39} q5,${o.stern ? 2 : -1} 10,${o.stern ? 3 : 1}" stroke="${o.hairColor || "#3a2c1a"}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`);
+  // nose + mouth
+  parts.push(`<path d="M60,48 q2.5,5 0,8" stroke="#00000033" stroke-width="2" fill="none" stroke-linecap="round"/>`);
+  if (!o.beard) parts.push(`<path d="M54,62 q6,${o.smile ? 4 : 1.5} 12,0" stroke="#00000055" stroke-width="2" fill="none" stroke-linecap="round"/>`);
+  if (o.scar) parts.push(`<path d="${o.scar}" stroke="#8c5a4a" stroke-width="2" fill="none" stroke-linecap="round"/>`);
+  if (o.beard) parts.push(o.beard);
+  if (o.hairFront) parts.push(o.hairFront);
+  if (o.extra) parts.push(o.extra);
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img">
+    <defs><filter id="pglow"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <clipPath id="pclip"><circle cx="60" cy="60" r="58"/></clipPath></defs>
+    <g clip-path="url(#pclip)">${parts.join("")}</g>
+    <circle cx="60" cy="60" r="57" fill="none" stroke="#c9a227" stroke-width="2.5" opacity="0.9"/>
+  </svg>`;
+}
+
+const H = {}; // shape library
+H.sweptSilver = `<path d="M38,42 Q36,24 60,22 Q84,24 82,42 Q82,30 60,29 Q38,30 38,42 Z" fill="#cfc8bb"/><path d="M38,44 Q35,32 41,27 L43,44 Z" fill="#cfc8bb"/><path d="M82,44 Q85,32 79,27 L77,44 Z" fill="#cfc8bb"/>`;
+H.beardSilver = `<path d="M42,52 Q42,74 60,77 Q78,74 78,52 Q74,64 60,65 Q46,64 42,52 Z" fill="#cfc8bb"/>`;
+H.crownHair = `<path d="M38,42 Q38,26 60,25 Q82,26 82,42 Q78,31 60,31 Q42,31 38,42 Z" fill="#6b5236"/><path d="M40,30 L44,18 L52,27 L60,15 L68,27 L76,18 L80,30 Q60,22 40,30 Z" fill="#e8c547" stroke="#a3801c" stroke-width="1.5"/><circle cx="60" cy="21" r="2.2" fill="#a33327"/>`;
+H.beardKing = `<path d="M40,50 Q40,78 60,82 Q80,78 80,50 Q75,66 60,68 Q45,66 40,50 Z" fill="#6b5236"/><path d="M52,63 q8,4 16,0" stroke="#00000033" stroke-width="2" fill="none"/>`;
+H.ponytail = `<path d="M38,44 Q36,25 60,24 Q84,25 82,44 Q80,31 60,30 Q40,31 38,44 Z" fill="#2e2118"/><path d="M78,32 Q92,38 88,62 L83,60 Q86,44 76,36 Z" fill="#2e2118"/>`;
+H.bunDark = `<path d="M39,42 Q38,26 60,25 Q82,26 81,42 Q78,30 60,30 Q42,30 39,42 Z" fill="#1c1410"/><circle cx="60" cy="20" r="7" fill="#1c1410"/>`;
+H.mohawk = `<path d="M52,30 Q60,8 68,30 L64,34 Q60,18 56,34 Z" fill="#8c2a20"/><path d="M40,42 Q42,32 52,30 L54,36 Q46,38 42,44 Z" fill="#1c1410" opacity="0.4"/><path d="M80,42 Q78,32 68,30 L66,36 Q74,38 78,44 Z" fill="#1c1410" opacity="0.4"/>`;
+H.hornHelm = `<path d="M36,44 Q36,20 60,19 Q84,20 84,44 L78,44 Q78,27 60,26 Q42,27 42,44 Z" fill="#3a3a40" stroke="#606068" stroke-width="1.5"/><path d="M38,32 Q24,26 22,12 Q34,18 40,26 Z" fill="#d8cdb4"/><path d="M82,32 Q96,26 98,12 Q86,18 80,26 Z" fill="#d8cdb4"/>`;
+H.ironCap = `<path d="M38,42 Q38,22 60,21 Q82,22 82,42 L76,42 Q76,28 60,27 Q44,28 44,42 Z" fill="#4a4a52" stroke="#63636b" stroke-width="1.5"/><rect x="57" y="21" width="6" height="10" fill="#63636b"/>`;
+H.blond = `<path d="M38,44 Q36,24 60,23 Q84,24 82,44 Q80,30 60,29 Q40,30 38,44 Z" fill="#b09050"/>`;
+H.longWhite = `<path d="M38,44 Q34,22 60,21 Q86,22 82,44 Q80,29 60,28 Q40,29 38,44 Z" fill="#e8e2d8"/><path d="M38,42 Q30,60 34,84 L44,80 Q40,60 42,46 Z" fill="#e8e2d8"/><path d="M82,42 Q90,60 86,84 L76,80 Q80,60 78,46 Z" fill="#e8e2d8"/>`;
+H.hoodViolet = `<path d="M32,52 Q28,16 60,14 Q92,16 88,52 Q86,26 60,24 Q34,26 32,52 Z" fill="#4a3a68"/><path d="M32,52 Q34,60 40,64 L42,52 Q38,48 36,44 Z" fill="#4a3a68"/><path d="M88,52 Q86,60 80,64 L78,52 Q82,48 84,44 Z" fill="#4a3a68"/>`;
+H.baldFringe = `<path d="M38,48 Q36,42 40,36 L44,44 Z" fill="#8c4a2a"/><path d="M82,48 Q84,42 80,36 L76,44 Z" fill="#8c4a2a"/>`;
+H.beardHuge = `<path d="M38,50 Q36,86 60,92 Q84,86 82,50 Q76,70 60,72 Q44,70 38,50 Z" fill="#a3502a"/><path d="M50,64 q10,6 20,0" stroke="#00000033" stroke-width="2.5" fill="none"/><path d="M55,78 L57,88 M65,78 L63,88" stroke="#00000022" stroke-width="2"/>`;
+H.knightHelm = `<path d="M37,44 Q37,20 60,19 Q83,20 83,44 L77,44 Q77,27 60,26 Q43,27 43,44 Z" fill="#5a5a64" stroke="#7a7a84" stroke-width="1.5"/><path d="M56,19 Q60,10 64,19 Z" fill="#a33327"/>`;
+H.wizHat = `<path d="M34,46 Q36,40 46,38 L58,12 Q62,10 64,14 L70,38 Q84,40 86,46 Q60,52 34,46 Z" fill="#3a4a68" stroke="#5a6a88" stroke-width="1.5"/><circle cx="61" cy="13" r="2.5" fill="#e8c547"/>`;
+H.hoodUp = `<path d="M33,54 Q28,18 60,16 Q92,18 87,54 Q85,28 60,26 Q35,28 33,54 Z" fill="#2e3830"/><path d="M33,54 Q35,62 42,66 L43,53 Q38,49 37,45 Z" fill="#2e3830"/><path d="M87,54 Q85,62 78,66 L77,53 Q82,49 83,45 Z" fill="#2e3830"/>`;
+H.circlet = `<path d="M38,43 Q36,25 60,24 Q84,25 82,43 Q80,30 60,29 Q40,30 38,43 Z" fill="#5a4a32"/><path d="M40,38 Q60,32 80,38" stroke="#e8c547" stroke-width="2.5" fill="none"/><circle cx="60" cy="34" r="2" fill="#8ab4d8"/>`;
+H.rangerHood = `<path d="M33,54 Q28,18 60,16 Q92,18 87,54 Q85,28 60,26 Q35,28 33,54 Z" fill="#3a4a34"/><path d="M80,30 L92,20 L90,32 Z" fill="#a8c69a"/>`;
+H.braids = `<path d="M38,44 Q36,24 60,23 Q84,24 82,44 Q80,30 60,29 Q40,30 38,44 Z" fill="#1c1410"/><path d="M40,40 Q34,58 36,76 L43,74 Q41,58 44,44 Z" fill="#1c1410"/><path d="M80,40 Q86,58 84,76 L77,74 Q79,58 76,44 Z" fill="#1c1410"/><circle cx="37" cy="74" r="2.5" fill="#d8cdb4"/><circle cx="83" cy="74" r="2.5" fill="#d8cdb4"/>`;
+
+const PORTRAITS = {
+  thorne: makePortrait({ skin: "#d9b08c", armor: "#5a2a2a", trim: "#e8c547", hairColor: "#9a9488", hairFront: H.sweptSilver, beard: H.beardSilver, smile: true,
+    collar: `<path d="M44,86 L60,110 L76,86 L70,84 Q60,94 50,84 Z" fill="#e8c547" opacity="0.9"/><circle cx="60" cy="104" r="4" fill="#e8c547"/>` }),
+  alden: makePortrait({ skin: "#c99b72", armor: "#3a3a44", trim: "#e8c547", hairColor: "#6b5236", hairFront: H.crownHair, beard: H.beardKing, stern: true,
+    collar: `<path d="M20,110 Q40,92 60,92 Q80,92 100,110 L100,122 L20,122 Z" fill="#6b1f1f"/><path d="M40,96 L60,104 L80,96" stroke="#e8c547" stroke-width="2" fill="none"/>` }),
+  sera: makePortrait({ skin: "#b98a62", armor: "#4a3c28", trim: "#8c7a52", hairColor: "#2e2118", hairFront: H.ponytail, scar: "M70,52 L76,58",
+    collar: `<path d="M44,84 Q60,92 76,84 L74,96 Q60,102 46,96 Z" fill="#6b5a3a"/><path d="M84,90 L94,78 L96,84 L88,94 Z" fill="#a8c69a"/>` }),
+  vail: makePortrait({ skin: "#d9b08c", armor: "#22222a", trim: "#8c8c9a", hairColor: "#1c1410", hairFront: H.bunDark, scar: "M46,40 L50,50", stern: true,
+    collar: `<path d="M46,84 L60,92 L74,84 L74,94 L60,100 L46,94 Z" fill="#3a3a44"/><path d="M56,96 L60,120 L64,96" fill="#8c8c9a"/>` }),
+  zarga: makePortrait({ skin: "#6b8a4a", armor: "#5a3a2a", trim: "#d8cdb4", hairColor: "#1c1410", hairFront: H.braids, tusks: true, stern: true, eyes: "#3a2a10",
+    collar: `<path d="M40,86 Q60,96 80,86" stroke="#d8cdb4" stroke-width="3" fill="none"/><circle cx="48" cy="90" r="3" fill="#f0e6d0"/><circle cx="60" cy="93" r="3" fill="#f0e6d0"/><circle cx="72" cy="90" r="3" fill="#f0e6d0"/>` }),
+  garthok: makePortrait({ skin: "#b06a3a", armor: "#3a3a40", trim: "#8c2a20", hairColor: "#1c1410", hairFront: H.hornHelm, tusks: true, stern: true, eyes: "#4a1408",
+    collar: `<path d="M36,122 L42,88 L48,104 L54,86 L60,102 L66,86 L72,104 L78,88 L84,122 Z" fill="#2a1a14" stroke="#8c2a20" stroke-width="1.5"/><circle cx="48" cy="98" r="2.5" fill="#d8cdb4"/><circle cx="72" cy="98" r="2.5" fill="#d8cdb4"/>` }),
+  grukk: makePortrait({ skin: "#b06a3a", armor: "#4a4a52", trim: "#63636b", hairColor: "#1c1410", hairFront: H.ironCap, tusks: true, stern: true, eyes: "#4a1408" }),
+  bram: makePortrait({ skin: "#d9b08c", armor: "#5a5a64", trim: "#a33327", hairColor: "#b09050", hairFront: H.knightHelm, beard: `<path d="M46,56 Q46,70 60,72 Q74,70 74,56 Q68,64 60,64 Q52,64 46,56 Z" fill="#b09050"/>`,
+    collar: `<circle cx="60" cy="100" r="8" fill="none" stroke="#a33327" stroke-width="2.5"/>` }),
+  zephyrine: makePortrait({ skin: "#e0c8b0", armor: "#3a2a50", trim: "#a48ad4", hairColor: "#e8e2d8", hairBack: H.longWhite, hairFront: H.hoodViolet, glowEyes: true, eyes: "#c8b8f0", smile: true,
+    collar: `<circle cx="60" cy="98" r="5" fill="#a48ad4" opacity="0.9"/><circle cx="60" cy="98" r="9" fill="none" stroke="#a48ad4" stroke-width="1.5" opacity="0.5"/>` }),
+  brannock: makePortrait({ skin: "#c98a62", armor: "#4a3520", trim: "#8c5a2a", hairColor: "#a3502a", hairFront: H.baldFringe, beard: H.beardHuge, stern: true,
+    collar: `<path d="M30,112 L44,96 L52,104 L44,118 Z" fill="#63636b"/><rect x="42" y="94" width="12" height="6" rx="2" fill="#8c5a2a" transform="rotate(-45 48 97)"/>` }),
+  /* class heroes */
+  fighter: makePortrait({ skin: "#c99b72", armor: "#5a5a64", trim: "#c9a227", hairColor: "#3a2c1a", hairFront: H.knightHelm, stern: true }),
+  wizard: makePortrait({ skin: "#d9b08c", armor: "#3a4a68", trim: "#8ab4d8", hairColor: "#4a3520", hairFront: H.wizHat }),
+  rogue: makePortrait({ skin: "#b98a62", armor: "#2e3830", trim: "#5a6a52", hairColor: "#1c1410", hairFront: H.hoodUp, scar: "M68,54 L74,60" }),
+  cleric: makePortrait({ skin: "#c99b72", armor: "#6b5a3a", trim: "#e8c547", hairColor: "#5a4a32", hairFront: H.circlet, smile: true,
+    collar: `<path d="M56,88 L60,84 L64,88 L64,96 L60,112 L56,96 Z" fill="#e8c547"/>` }),
+  ranger: makePortrait({ skin: "#b98a62", armor: "#3a4a34", trim: "#a8c69a", hairColor: "#2e2118", hairFront: H.rangerHood })
+};
+
+function pArt(key) {
+  return PORTRAITS[key] ? `<span class="scene-portrait">${PORTRAITS[key]}</span>` : "❔";
+}
+
+/* ============================================================
+   HERO SHEET & JOURNAL — overlay, no scene re-entry
+   ============================================================ */
+function journalEntries() {
+  const ch = flags.chapter, e = [];
+  const done = n => ch > n, now = n => ch === n;
+  const add = (n, title, text) => { if (done(n) || now(n)) e.push({ n, title, text, current: now(n) }); };
+  add(1, "The Medicine Train", done(1)
+    ? `Councilor Thorne — warm, worried, generous — hired you from his own purse to recover a stolen medicine shipment. You broke Captain Snagfang's raiders and brought every crate home. ${flags.coinKept ? "You kept the odd sunburst coin he gave you. Something about it seemed worth remembering." : "He paid in gold, and one odd sunburst coin you spent without a second look."}`
+    : `A medicine shipment bound for the refugee camps was taken on the Duskhaven road. Thorne has hired you to bring it back.`);
+  add(2, "The Warren of Craghollow", done(2)
+    ? `Thorne's flawless map led you to Lieutenant Grukk's warren. You freed the trapper Sera${flags.evidence.includes("forgemark") ? ", found Ironvale forge-marks on goblin steel," : ""} and put Grukk down — ${flags.evidence.includes("coin") ? "and matched the fresh-minted coin in his pouch to Thorne's own gift. The same purse pays both sides." : "his pouch heavy with suspiciously fresh-minted coin."} While you fought underground, the Westmill granary burned, unguarded.`
+    : `Thorne has a map of the goblin warren — a map almost too good. Grukk waits below Craghollow Ridge.`);
+  add(3, "Gray Orders", done(3)
+    ? (flags.grayLoyal ? `You carried out the council's weapons confiscation — gently, but you carried it out. The wagons rolled to the Blackpike depot, and the poor quarter remembers who led them.`
+      : flags.graySubverted ? `You took Thorne's confiscation writ and quietly betrayed it — real steel under floorboards, rusted scrap in the wagons. The poor quarter knows what you did for them. Thorne, so far, does not.`
+      : `You refused the confiscation writ to Thorne's face. The Blackpikes did it without you, uglier — and paid knives found you in an alley soon after.`)
+    : `The council wants the citizens disarmed "for centralized defense." The writ has your name on it.`);
+  add(4, "The Poisoned Gift", done(4)
+    ? `King Alden armed you with a royal writ and his father's charm, and sent you to retake Redwatch — but the goblins knew your route, known only to the war council. ${flags.evidence.includes("routeNote") ? "In Vex's tent you found your own route under a council seal." : flags.embarrassed ? "In Vex's tent you seized a planted lead and denounced an innocent quartermaster — a mistake the court remembers." : "Vex's paperwork burned unread — whatever it proved rode away with the wind."}`
+    : `The King himself has charged you with retaking Redwatch fort. Only three people know your route.`);
+  add(5, "The Warlord's Ledger", done(5)
+    ? `You went into Gar'Thok's war camp and came out with his insurance: a ledger of every raid Thorne bought, in the warlord's own hand.`
+    : `Sera can put you inside Gar'Thok's camp. Whatever ties the warlord to his paymaster lives in the great tent.`);
+  add(6, "The Breaking Point", done(6)
+    ? `The siege came, the Duke died in his bath, and you carried the truth to a King who loved his traitor like a brother. ${flags.thorneFate === "justice_hero" ? "The square heard the case from your own lips, and turned its back on Thorne as one body." : flags.thorneFate === "justice" ? "Alden read the ledger aloud in the torch-lit square, and Thorne left his own podium in chains." : flags.thorneFate === "wolves" ? "Thorne fled the podium — and Gar'Thok's oathband collected the debt their warlord was owed. Sunburst coins, arranged in a circle." : "In the uproar Thorne vanished into the crowd he knew better than anyone. The realm still hunts a gray man with soft hands."}`
+    : `The horde is at the gates, the Duke is dead, and Thorne's podium is built. Whatever evidence you hold, tonight it must be enough.`);
+  add(7, "The Exoneration", done(7)
+    ? `A stacked commission declared your ledger a forgery, and Thorne took a staged knife for the King to complete his rehabilitation. ${flags.sawStaging ? "You saw the choreography in it — the blade turned flat, the step into it." : "The hall saw an old man buy a king's life with his own blood."} The Ember gathers in a tannery cellar.`
+    : `Thorne is back — exonerated, beloved, and twice the martyr. Sera whispers that something bigger is coming.`);
+  add(8, "The Second Siege", done(8)
+    ? `Zarga's horde besieged the city on schedule. ${flags.decoyRefused ? "You refused Thorne's decoy errand and watched the King leave his own city through the catacombs, believing false intelligence." : "Thorne's 'relief column' was a decoy to move you out of the city — and it nearly worked."} By the time the dust settled: a staged miracle, a forged abdication, and Lord Protector Thorne on the balcony.`
+    : `The siege tightens. Thorne wants you escorting a relief column. Sera smells a trap with two doors.`);
+  add(9, "City of Lies", done(9)
+    ? `From the Ember you fought the story itself${flags.bramSaved ? " — Ser Bram lifted from the gallows" : ""}${flags.opsDone && flags.opsDone.includes("B") ? ", ten questions printed in the King's own typeface" : ""}${flags.evidence.includes("wagonManifest") ? ", and the 'stolen' treasury traced to Blackpike wagons rolling east" : ""}. Vail let you walk away once, and told you where the King went.`
+    : `Two operations, then the crackdown comes. Choose what the city needs most.`);
+  add(10, "The King in the Wilderness", done(10)
+    ? `Through the ghoul-haunted catacombs — where a dead scout still carried the false orders that moved a King — and north through the fens, you found Alden guarding a ruin and talked him back onto his feet. ${flags.zargaDeal ? "Zarga sold you Thorne's letters and a truce, payable from the traitor's estates." : "Zarga's Bone-Sworn didn't part with her insurance willingly."}`
+    : `The King is somewhere past the Coldbrook fens, believing himself a coward. Find him. Rebuild him.`);
+  add(11, "The Barons' Moot", done(11)
+    ? `At Wrenhall, ${flags.baronsWon || 0} banner${(flags.baronsWon || 0) === 1 ? "" : "s"} dipped to the King — and the Gray Web's knives at the moot dipped the rest of the realm's doubts with them.`
+    : `Three barons, three prices, one moot. The King speaks first; the case is yours to close.`);
+  add(12, "The Retaking of Ironvale", done(12)
+    ? `Ironvale came home. ${(flags.truth || 0) >= 65 ? "The city opened its own gates at the midnight bell." : "The east gate was stormed one last time."} ${flags.vailYielded ? "Vail yielded her duel and her testimony both." : ""}`
+    : `The host stands before the walls. Hearts of the City: ${flags.truth || 0}/100. At 65, the gates open themselves.`);
+  add(13, "Epilogue", `The Serpent unmasked; the Coward King uncrowned. Somewhere in the nation, the Circle's other chairs are still warm.`);
+  return e;
+}
+
+function heroSheetHtml() {
+  const w = curWeapon();
+  const perks = [
+    ["Race — " + C.race.name, C.race.perk],
+    ["Class — " + C.cls.name, C.cls.perk],
+    ["Origin — " + C.origin.name, C.origin.perk],
+    ["Event — " + C.event.name, C.event.perk],
+    ["Motive — " + C.motive.name, C.motive.perk]
+  ];
+  const abilities = [`${C.cls.ability.name}: ${C.cls.ability.desc}`];
+  if (C.breath) abilities.push("Fire Breath: 2-4d6 fire to all foes, once per combat");
+  (C.spells || []).forEach(k => abilities.push(`${WIZ_SPELLS[k].name}: ${WIZ_SPELLS[k].desc}`));
+  const itemCounts = {};
+  C.items.forEach(i => itemCounts[i] = (itemCounts[i] || 0) + 1);
+  const journal = journalEntries();
+  return `
+  <div id="hs-box">
+    <button id="hs-close" onclick="closeHeroSheet()">✕ Close</button>
+    <h2 style="color:var(--gold-bright);font-variant:small-caps;letter-spacing:2px">${PORTRAITS && PORTRAITS[C.cls.id] ? `<span class="hs-portrait">${PORTRAITS[C.cls.id]}</span>` : ""}${esc(C.name)}</h2>
+    <div class="card-tag">Level ${C.level} ${C.race.name} ${C.cls.name} · ${C.origin.name} · ${C.event.name} · driven by ${C.motive.name}</div>
+    <div class="sheet-block"><i>${C.backstoryProse}</i></div>
+    <div class="stat-grid">${ABILITIES.map(a => `<div class="stat-box"><div class="stat-name">${a}</div><div class="stat-val">${C.scores[a]}</div><div class="stat-mod">${fmtMod(mod(C.scores[a]))}</div></div>`).join("")}</div>
+    <div class="sheet-block">
+      <b>HP:</b> ${C.hp}/${C.maxHp} &nbsp; <b>AC:</b> ${C.ac} <span class="card-tag">(${armorDisplayName()})</span> &nbsp; <b>Gold:</b> ${C.gold} &nbsp; <b>XP:</b> ${C.xp}${xpToNext() ? ` / ${xpToNext()} to Lv ${C.level + 1}` : " (max level)"}<br>
+      <b>Weapon:</b> ${weaponName()} — ${w.dmg[0]}d${w.dmg[1]}${w.dmgB + weaponDmgBonus() ? "+" + (w.dmgB + weaponDmgBonus()) : ""} (${w.stat}${w.atk + weaponAtkBonus() ? ", " + fmtMod(w.atk + weaponAtkBonus()) + " atk" : ""})${C.weaponTier === 2 ? " +1d4 fire" : C.weaponTier === 3 ? " +1d6 fire" : ""}
+    </div>
+    <div class="sheet-block"><b>Abilities & Spells:</b><br>${abilities.map(a => `<span class="tag">${a}</span>`).join("")}</div>
+    <div class="sheet-block"><b>Backstory Perks:</b><br>${perks.map(p => `<span class="tag" title="${esc(p[1])}"><b>${p[0]}:</b> ${p[1]}</span>`).join("")}</div>
+    <div class="sheet-block"><b>Proficiencies</b> (+${profBonus()}): ${C.profs.map(p => `<span class="tag">${p}</span>`).join("")}</div>
+    <div class="sheet-block"><b>Inventory:</b><br>${Object.keys(itemCounts).length ? Object.entries(itemCounts).map(([i, n]) => `<span class="tag">${esc(i)}${n > 1 ? " ×" + n : ""}</span>`).join("") : "<span class='card-tag'>Empty pockets</span>"}</div>
+    ${flags.evidence && flags.evidence.length ? `<div class="sheet-block"><b>🧾 Evidence & Proofs:</b><br>${flags.evidence.map(id => `<span class="tag" style="${EVIDENCE[id].false ? "border-color:#8c5a4a;color:#d48a80" : "border-color:#5a7d4a;color:#a8c69a"}">${EVIDENCE[id].false ? "⚠" : "✓"} ${esc(EVIDENCE[id].name)}</span>`).join("")}${hasFalseEvidence() ? `<div class="card-tag" style="margin-top:4px;color:#d48a80">⚠ Unverified papers in the satchel — a debunked lead can sink a true case.</div>` : ""}</div>` : ""}
+    <h2 style="color:var(--gold);font-variant:small-caps;letter-spacing:2px;margin-top:18px">📖 Journal</h2>
+    ${journal.map(j => `<div class="sheet-block" ${j.current ? 'style="border-color:var(--gold)"' : ""}><b>${j.current ? "▶ " : "✓ "}Ch. ${j.n} — ${j.title}</b><br><span style="font-size:.92em">${j.text}</span></div>`).join("")}
+    ${flags.chapter >= 8 && flags.chapter <= 12 ? `<div class="sheet-block"><b>🗣 Hearts of the City:</b> ${flags.truth || 0}/100 — at 65+, Ironvale rises with you.</div>` : ""}
+  </div>`;
+}
+
+function openHeroSheet() {
+  if (!C) return;
+  let ov = document.getElementById("hero-sheet-overlay");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "hero-sheet-overlay";
+    ov.addEventListener("click", e => { if (e.target === ov) closeHeroSheet(); });
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = heroSheetHtml();
+  ov.style.display = "flex";
+}
+function closeHeroSheet() {
+  const ov = document.getElementById("hero-sheet-overlay");
+  if (ov) ov.style.display = "none";
+}
+function updateSheetBtn() {
+  let b = document.getElementById("sheet-ctl");
+  if (!b) {
+    b = document.createElement("div");
+    b.id = "sheet-ctl";
+    b.innerHTML = `<button onclick="openHeroSheet()" title="Hero sheet & journal">📖</button>`;
+    document.body.appendChild(b);
+  }
+  b.style.display = C ? "block" : "none";
+}
+
+/* ============================================================
    TITLE SCREEN & BOOT
    ============================================================ */
 function renderTitle() {
@@ -3587,9 +3848,11 @@ function renderTitle() {
     <p class="flavor" style="max-width:600px;margin:10px auto 6px">Goblin raids are strangling the city of Ironvale — and the kindly councilor hiring heroes to stop them is the man pulling every string. Forge a hero, rise from level 1 to 6, gear up at the forge and the enchanter's shop, and unmask a conspiracy — then survive its author's counterstroke, when a framed King must be pulled back from exile.</p>
     <p style="max-width:600px;margin:0 auto 18px;font-size:.92em">D&amp;D-style rules: d20 checks, advantage, leveling, shops &amp; training — and backstories that <b>unlock unique paths</b> through a two-campaign, twelve-chapter saga with branching endings — the first chapters of the nation's continuing story.</p>
     <div class="action-row">
-      <button class="primary" style="font-size:1.15em;padding:14px 30px" onclick="renderCreation()">⚔ Forge Your Hero</button>
-      <button style="padding:14px 22px" onclick="showLoadScreen()">📜 Continue a saved tale</button>
+      ${(() => { const m = autosaveMeta(); return m ? `<button class="primary" style="font-size:1.15em;padding:14px 30px" onclick="loadSaveCode(Store.get(AUTOSAVE_KEY))">▶ Continue — ${esc(m.name)}, Lv ${m.level} ${esc(m.cls)} (${CHAPTER_NAMES[m.chapter] || "Ch. " + m.chapter})</button>` : ""; })()}
+      <button ${autosaveMeta() ? "" : 'class="primary" style="font-size:1.15em;padding:14px 30px"'} onclick="renderCreation()">⚔ Forge Your Hero</button>
+      <button style="padding:14px 22px" onclick="showLoadScreen()">📜 Load a save code</button>
     </div>
+    ${Store.ok ? `<p class="card-tag" style="margin-top:10px">Your progress autosaves in this browser after every scene.</p>` : `<p class="card-tag" style="margin-top:10px">Autosave unavailable here — use the Chronicler's Quill save codes.</p>`}
     ${SUPPORT_URL ? `<p style="margin-top:16px"><a href="${SUPPORT_URL}" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">☕ Enjoying Emberfall? Buy the designer an ale</a></p>` : ""}
   </div>`;
 }
