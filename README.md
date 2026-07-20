@@ -32,6 +32,10 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **Patrols & random encounters** — the roads between missions hold ambushes, wolf packs, overturned carts, wayside shrines, and gray riders with strange seals. Leveling is earned now: story missions alone won't carry you, and the wise hero rides patrol.
 
+**Roads of chance** — the ride to a mission doesn't always go to plan. About one departure in three is waylaid: scavenger ambushes, deserters' tolls, half-buried strongboxes, smugglers' caches, loyalist dead-drops — and the occasional chest that is, on closer inspection, faintly *wet*. Every chest and cache is opened on a skill check with the reward and the trap printed right on the button. Fights can drop spoils too: gold, potions, alchemist's fire — and four rare unique treasures (the Whetstone of Old Wars, Wayfarer's Boots, the Ironheart Locket, the Duelist's Band) that no shop will ever sell and no save will ever drop twice.
+
+![Waylay](waylay.png)
+
 **A nation's story, beginning** — Thorne answered to someone. The gray wax seal of the Second Chair waits in the epilogue, and future campaigns will carry the fight to the rest of the realm.
 
 **A living soundscape, still one file** — a warm royalty-free fantasy ambient score is embedded right in the game and adapts to the fiction: full and bright in town, quieter on the road, and ducked low beneath synthesized war drums and dread drones when blades come out. Every sound effect is synthesized in your browser at the moment it plays: dice clatter, sword rings and crits, coin clinks, healing chimes, war-cry growls, spell shimmers, and a level-up fanfare. Toggle sound and music anytime from the corner controls.
