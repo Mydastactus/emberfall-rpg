@@ -114,6 +114,8 @@
   .choices { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
   .choices button { text-align: left; padding: 12px 16px; }
   .choices button .req { color: var(--ink-dim); font-size: .85em; font-style: italic; }
+  .choices button .req .win { color: #a8c69a; font-style: normal; }
+  .choices button .req .lose { color: #d48a80; font-style: normal; }
   .choices button.backstory-choice { border-color: #6d5a8c; }
   .choices button.backstory-choice:hover:not(:disabled) { border-color: #a48ad4; color: #c9b8e8; }
   .choices button.backstory-choice .req { color: #a48ad4; }
@@ -2168,7 +2170,7 @@ function councilScene() {
         `<i>Something about it sits wrong. Disarming frightened people, in a city where the watch answers to the council...</i>` ],
       [ { txt: "📜 Carry out the writ — collect the weapons, keep it gentle", onclick: "startMission('m3_comply')" },
         { txt: "✋ Refuse, to his face. You won't disarm frightened citizens.", onclick: "startMission('m3_refuse')" },
-        { backstory: true, txt: "🎭 Accept the writ — but work it your own way", req: "(Deception — appear loyal while quietly warning the citizens)", onclick: "startMission('m3_subvert')" } ]);
+        { backstory: true, txt: "🎭 Accept the writ — but work it your own way", req: `(Deception, DC 13) <span class="win">✓ Thorne's trust AND the people's — both kept</span> · <span class="lose">✗ caught: his cold silence, and paid knives in an alley</span>`, onclick: "startMission('m3_subvert')" } ]);
   } else if (ch === 4) {
     scene("🏛", "A Royal Summons",
       [ `This time the seal on the letter is not Thorne's. It is the <b>King's</b>.`,
@@ -2196,17 +2198,19 @@ function m1_road() {
   scene("🛞", "The Duskhaven Road",
     [ `You find the medicine train at midday — or what's left of it. Four wagons, overturned and ransacked with unsettling efficiency. Crates of trade goods lie untouched in the mud; only the <b>medicine</b> is gone, every vial and bale of it.`,
       `A caravan guard slumps against a wheel, breathing wet and shallow. Goblin tracks — dozens — lead northwest into the pinewood.` ],
-    [ !flags.m.helped ? { txt: "🩹 Tend the wounded guard first", req: "(Medicine, DC 12)", onclick: "m1_guard()" } : null,
-      !flags.m.tracked ? { txt: "🔍 Study the tracks and the wreck", req: "(Survival, DC 12 — learn their numbers and habits)", onclick: "m1_tracks()" } : null,
-      { txt: "🌲 Follow the trail northwest", onclick: "goScene('m1_camp')" } ].filter(Boolean));
+    [ !flags.m.helped ? { txt: "🩹 Tend the wounded guard first", req: `(Medicine, DC 12) <span class="win">✓ save him — and hear what the raiders let slip</span> · <span class="lose">✗ he fades, and patching him drains your supplies</span>`, onclick: "m1_guard()" } : null,
+      !flags.m.tracked ? { txt: "🔍 Study the tracks and the wreck", req: `(Survival, DC 12) <span class="win">✓ read their numbers — strike the camp on your terms</span> · <span class="lose">✗ stumble into a goblin snare</span>`, onclick: "m1_tracks()" } : null,
+      { txt: "🌲 Follow the trail northwest", req: "(no roll — but what you learned here travels with you)", onclick: "goScene('m1_camp')" } ].filter(Boolean));
 }
 function m1_guard() {
   flags.m.helped = true;
   const res = sceneCheck("Medicine", 12);
+  if (res.success) flags.m.watchword = true;
+  else { const cost = Math.min(10, C.gold); C.gold -= cost; flags.m.guardCost = cost; }
   scene("🩹", "The Dying Guard",
     [ res.success
-        ? `You stanch the worst of it and get water into him. He grips your wrist with sudden strength. "They didn't... search. Came straight for the medicine wagon. THE one. Like they'd read the manifest." He passes out — alive, and likely to stay that way. <b>(+50 XP)</b>`
-        : `You do what you can, which is little. Before consciousness fades he rasps: "...knew which wagon. Went straight to it..." His breathing steadies — barely.`,
+        ? `You stanch the worst of it and get water into him. He grips your wrist with sudden strength. "They didn't... search. Came straight for the medicine wagon. THE one. Like they'd read the manifest." Then, quieter: "Their runner... called a word at the treeline before they charged. <b>'Iron-tusk.'</b> Twice. Like a knock on a door." He passes out — alive, and likely to stay that way. <b>(+50 XP — and you know the raiders' watchword.)</b>`
+        : `You do what you can, which is more supplies than skill — salves, clean linen, the last of your road-kit poured into keeping him breathing. <b>(−${flags.m.guardCost} gold in spent supplies.)</b> Before consciousness fades he rasps: "...knew which wagon. Went straight to it..." His breathing steadies — barely. Whatever else he saw stays behind his closed eyes.`,
       `<i>Goblins that read cargo manifests. File that thought somewhere sharp.</i>` ],
     [ { txt: "← Back to the wreck", onclick: (res.success ? "grantXp(50,'aid rendered');" : "") + "goScene('m1_road')" } ]);
 }
@@ -2214,10 +2218,12 @@ function m1_tracks() {
   flags.m.tracked = true;
   const res = sceneCheck("Survival", 12);
   if (res.success) flags.m.knowCamp = true;
+  let snare = 0;
+  if (!res.success) { snare = d(4); C.hp = Math.max(1, C.hp - snare); }
   scene("🔍", "Reading the Ground",
     [ res.success
         ? `The story is written plain: eight, maybe ten goblins — but moving in <b>column</b>, not the usual squabbling mob. They rested in shifts. Posted a rearguard. Someone has been drilling these creatures like soldiers. You mark their likely camp: a hollow two miles up, with one blind approach from the east. <b>(+50 XP — you'll strike on your terms.)</b>`
-        : `Rain and panic have churned the ground to porridge. The trail leads northwest; beyond that, the earth keeps its secrets.` ],
+        : `Rain and panic have churned the ground to porridge — and your next step finds what the rain hid: a goblin snare, wire and fishhooks, that opens your calf before you tear free. <b>(−${snare} HP.)</b> The trail leads northwest; beyond that, the earth keeps its secrets, and now it's drawn blood for them.` ],
     [ { txt: "🌲 Follow the trail northwest", onclick: (res.success ? "grantXp(50,'expert tracking');" : "") + "goScene('m1_camp')" } ]);
 }
 function m1_camp() {
@@ -2225,9 +2231,14 @@ function m1_camp() {
   scene("⛺", "The Hollow",
     [ `Smoke threads up from a pine hollow. Below: campfires, stacked medicine crates, and goblins — ${flags.m.knowCamp ? "eight of them, arranged in proper watches, exactly as you predicted. From the blind eastern approach you can see it all" : "hard to count in the trees"}. Two stand sentry near the crates while a broad-shouldered captain in looted mail — all snarl and swagger — kicks a smaller one toward the cookfire.`,
       `The stolen mule team is picketed at the camp's edge, still in harness.` ],
-    [ { txt: "🤫 Slip down and strike the sentries first", req: `(Stealth, DC ${flags.m.knowCamp ? 10 : 13})`, onclick: `m1_approach(${flags.m.knowCamp ? 10 : 13})` },
+    [ flags.m.watchword ? { backstory: true, txt: "🗣 Call out \"Iron-tusk\" at the treeline — walk in as an expected courier", req: `(no roll — earned at the dying guard's side) <span class="win">✓ inside their guard before they know better</span>`, onclick: "m1_watchword()" } : null,
+      { txt: "🤫 Slip down and strike the sentries first", req: `(Stealth, DC ${flags.m.knowCamp ? 10 : 13}${flags.m.knowCamp ? " — lowered: you know their watch rotation" : ""}) <span class="win">✓ the first blow is yours</span> · <span class="lose">✗ spotted — the brawl is on their terms</span>`, onclick: `m1_approach(${flags.m.knowCamp ? 10 : 13})` },
       farmOpt ? { backstory: true, txt: "🌾 You know mules. Spook the team into a stampede through the camp", req: bkReq("Farm Child — chaos on demand"), onclick: "flags.m.muleTrick = true; goScene('m1_mules')" } : null,
-      { txt: "⚔ No games — charge the camp", onclick: "m1_fight1(false)" } ].filter(Boolean));
+      { txt: "⚔ No games — charge the camp", req: "(no roll — an honest brawl, on even terms)", onclick: "m1_fight1(false)" } ].filter(Boolean));
+}
+function m1_watchword() {
+  grantXp(50, "the courier's trick");
+  m1_fight1(true, "\"Iron-tusk!\" The sentries wave you in, bored — and the first one is still reaching for a greeting when your steel arrives. Kindness at the wreck, repaid with interest. ");
 }
 function m1_approach(dc) {
   const res = sceneCheck("Stealth", dc);
@@ -2280,9 +2291,9 @@ function m2_gate() {
     [ `Thorne's map proves flawless — unnervingly so. Every guard post is where the ink says. Every patrol passes when the margin-notes promise. You reach the cave mouth having not been seen once.`,
       `A single <b>hobgoblin guard</b> paces the entrance, torchlight on scavenged mail. Beyond, firelight breathes deep in the hill's throat.`,
       soldierAdv ? `<i>⚔️ The patrol timing on this map isn't scout work — it's a garrison duty roster. You'd know one anywhere. That thought will keep. Meanwhile, you know exactly when the guard's attention lapses.</i>` : `` ].filter(Boolean),
-    [ { txt: "🤫 Slip past during the watch change", req: `(Stealth, DC ${soldierAdv ? 10 : 13})`, onclick: `m2_sneak(${soldierAdv ? 10 : 13})` },
-      { txt: "🎭 Stride up like you're expected", req: "(Deception, DC 14" + (C.origin.id === "noble" ? " — or Persuasion DC 11, with aristocratic certainty" : "") + ")", onclick: "m2_bluff()" },
-      { txt: "⚔ Cut the guard down", onclick: "startCombat(['guard'], 'm2_warren', { intro: 'The hobgoblin levels its longsword and bellows an alarm that no one, deep in the feasting-din below, seems to hear.' })" } ]);
+    [ { txt: "🤫 Slip past during the watch change", req: `(Stealth, DC ${soldierAdv ? 10 : 13}${soldierAdv ? " — lowered by your soldier's eye" : ""}) <span class="win">✓ enter unseen — the first blow on Grukk is yours</span> · <span class="lose">✗ the alarm — steel answers at the gate</span>`, onclick: `m2_sneak(${soldierAdv ? 10 : 13})` },
+      { txt: "🎭 Stride up like you're expected", req: "(Deception, DC 14" + (C.origin.id === "noble" ? " — or Persuasion DC 11, with aristocratic certainty" : "") + `) <span class="win">✓ walk in openly, unchallenged</span> · <span class="lose">✗ the bluff collapses into a blade</span>`, onclick: "m2_bluff()" },
+      { txt: "⚔ Cut the guard down", req: "(no roll — loud, honest, and Grukk will be ready)", onclick: "startCombat(['guard'], 'm2_warren', { intro: 'The hobgoblin levels its longsword and bellows an alarm that no one, deep in the feasting-din below, seems to hear.' })" } ]);
 }
 function m2_sneak(dc) {
   const res = sceneCheck("Stealth", dc);
@@ -2312,7 +2323,7 @@ function m2_warren() {
   scene("🕯", "The Warren",
     [ `Three passages, thick with smoke and the sour reek of goblin. Somewhere deep, a drum beats slow as a buried heart. From the <b>left</b>: a hoarse human voice. From the <b>right</b>: firelight on metal — a lot of metal. <b>Ahead</b>: the drum.` ],
     [ !flags.m.freed ? { txt: "⛓ Left — the voice", onclick: "goScene('m2_prisoner')" } : null,
-      !flags.m.armory ? { txt: "🗡 Right — the metal", onclick: "goScene('m2_armory')" } : null,
+      !flags.m.armory ? { txt: "🗡 Right — the metal", req: `(Investigation on arrival) <span class="win">✓ the maker's marks tell a story worth keeping</span> · <span class="lose">✗ clumsy searching wakes something in the dark</span>`, onclick: "goScene('m2_armory')" } : null,
       { txt: "🥁 Ahead — Grukk", onclick: "goScene('m2_grukk_talk')" } ].filter(Boolean));
 }
 function m2_prisoner() {
@@ -2320,9 +2331,9 @@ function m2_prisoner() {
     [ `Behind a rusted grate: a weathered woman in trapper's leathers, who takes your measure in one glance and grins through a split lip. "Well. Rescue's better-armed than I expected. Name's <b>Sera</b> — they took me on the ridge road three days back."`,
       `She jerks her chin toward the drum. "The big one, Grukk — he gets <i>visitors</i>. Human ones. Cloaked, city boots, always at night. I hear coin change hands." She grips the bars. "Get me out. I fight better than I look."` ],
     [ C.items.includes("Lockpicks") ? { backstory: true, txt: "🔓 Pick the lock — alley skills never rust", req: bkReq("Street Urchin"), onclick: "m2_free(true)" } : null,
-      { txt: "💪 Wrench the grate loose", req: "(Athletics, DC 13)", onclick: "m2_freeCheck('Athletics')" },
-      { txt: "🪛 Probe the lock", req: "(Sleight of Hand, DC 13)", onclick: "m2_freeCheck('Sleight of Hand')" },
-      { txt: "← Back", onclick: "goScene('m2_warren')" } ].filter(Boolean));
+      { txt: "💪 Wrench the grate loose", req: `(Athletics, DC 13) <span class="win">✓ Sera fights beside you from here on</span> · <span class="lose">✗ the iron bites back — pain, and another try</span>`, onclick: "m2_freeCheck('Athletics')" },
+      { txt: "🪛 Probe the lock", req: `(Sleight of Hand, DC 13) <span class="win">✓ Sera fights beside you from here on</span> · <span class="lose">✗ a slipped pick and a bleeding palm</span>`, onclick: "m2_freeCheck('Sleight of Hand')" },
+      { txt: "← Back", req: "(leave her — and face Grukk without a flanker)", onclick: "goScene('m2_warren')" } ].filter(Boolean));
 }
 function m2_free(auto) {
   flags.m.freed = true; flags.seraFriend = true;
@@ -2345,13 +2356,22 @@ function m2_freeCheck(skill) {
 function m2_armory() {
   flags.m.armory = true;
   const res = sceneCheck("Investigation", 12);
+  if (!res.success) {
+    scene("🗡", "The Armory Cache",
+      [ `Racks of weapons — far too many, and far too good. You pull crates about, hunting meaning in the maker's marks and finding none — and your clatter finds something else instead: a goblin scavenger, asleep in the back racks with a stolen jug, now very much awake and very much between you and the coin chest.` ],
+      [ { txt: "⚔ Deal with it — quickly, before the noise carries", onclick: "startCombat(['goblin2'], 'm2_armory_loot', { intro: 'It comes up swinging, jug in one hand, dagger in the other. The jug, at least, misses.' })" } ]);
+    return;
+  }
   scene("🗡", "The Armory Cache",
     [ `Racks of weapons — far too many, and far too good. Goblin scrap sits beside <b>fresh-forged steel</b>: matched spearheads, uniform swords, oiled and crated like a quartermaster's shipment.`,
-      res.success
-        ? `You turn a blade to the torchlight and your stomach drops. Struck into the ricasso, plain as a signature: the <b>anvil-and-tower of the Ironvale city forge</b>. This steel was made INSIDE the walls you're fighting for — and shipped here in crates. <b>(EVIDENCE: forge-marked steel — you wrap a shortsword to keep.)</b>`
-        : `Good steel, strangely uniform — but the maker's marks mean nothing to you, and there's no time to puzzle over smith-craft.`,
+      `You turn a blade to the torchlight and your stomach drops. Struck into the ricasso, plain as a signature: the <b>anvil-and-tower of the Ironvale city forge</b>. This steel was made INSIDE the walls you're fighting for — and shipped here in crates. <b>(EVIDENCE: forge-marked steel — you wrap a shortsword to keep.)</b>`,
       `A coin chest by the door yields <b>40 gold</b> — and a crate of wax-sealed vials Sera identifies at a sniff: <b>alchemist's fire</b>. You pocket one.` ],
-    [ { txt: "← Back to the junction", onclick: `C.gold += 40; C.items.push("Alchemist's Fire"); ${res.success ? "addEvidence('forgemark');" : ""} logRoll('💰','+40 gold from the cache','success'); goScene('m2_warren')` } ]);
+    [ { txt: "← Back to the junction", onclick: `C.gold += 40; C.items.push("Alchemist's Fire"); addEvidence('forgemark'); logRoll('💰','+40 gold from the cache','success'); goScene('m2_warren')` } ]);
+}
+function m2_armory_loot() {
+  scene("🗡", "The Cache, Quieter",
+    [ `The scavenger dealt with, you take what's plain to take: <b>40 gold</b> from the coin chest and a vial of <b>alchemist's fire</b>. The strange, uniform steel stays a nagging question you can't answer — whatever its marks would have told a sharper eye rides back to Ironvale unread.` ],
+    [ { txt: "← Back to the junction", onclick: `C.gold += 40; C.items.push("Alchemist's Fire"); logRoll('💰','+40 gold from the cache','success'); goScene('m2_warren')` } ]);
 }
 function m2_grukk_talk() {
   scene("😈", "The Drum-Chamber",
@@ -2569,9 +2589,9 @@ function m5_meet() {
   scene("🌲", "The Treeline",
     [ `Sera is exactly where the whisper promised, cross-legged on a deadfall, cleaning her nails with a skinning knife. ${flags.seraFriend ? `"Took you long enough," she says, but she's grinning. She clasps your forearm like a comrade.` : `She looks you over once. "The Craghollow hero. Good — I don't work with amateurs."`}`,
       `"Gar'Thok's war camp is two valleys east. Four hundred spears and growing — and here's the meat of it: I watched a <b>cloaked rider</b> come up from the city road by night, twice. City boots. Soft hands. Gold going in, orders coming out." She sketches the camp in the dirt: pickets, horse-lines, and a great central tent. "Whatever ties the warlord to his paymaster, it lives in <b>that tent</b>. I can get you to the wire. After that, it's your show."` ],
-    [ { txt: "🎭 Walk in disguised as a sellsword come to sign on", req: "(Deception, DC 13" + (C.origin.id === "soldier" ? " — advantage: you can wear a war-camp like a uniform" : "") + ")", onclick: `m5_disguise(${C.origin.id === "soldier" ? "true" : "false"})` },
-      { txt: "🌙 Go over the wire in the dead watch", req: "(Stealth, DC 13" + (C.origin.id === "urchin" ? " — advantage: you grew up not being seen" : "") + ")", onclick: `m5_sneak(${C.origin.id === "urchin" ? "true" : "false"})` },
-      { txt: "🔥 Have Sera fire the horse-lines — go in loud through the chaos", onclick: "m5_loud()" } ]);
+    [ { txt: "🎭 Walk in disguised as a sellsword come to sign on", req: "(Deception, DC 13" + (C.origin.id === "soldier" ? " — advantage: you can wear a war-camp like a uniform" : "") + `) <span class="win">✓ stroll to the tent unchallenged</span> · <span class="lose">✗ named a spy — fight through an alerted camp</span>`, onclick: `m5_disguise(${C.origin.id === "soldier" ? "true" : "false"})` },
+      { txt: "🌙 Go over the wire in the dead watch", req: "(Stealth, DC 13" + (C.origin.id === "urchin" ? " — advantage: you grew up not being seen" : "") + `) <span class="win">✓ ghost to the tent between the watch-fires</span> · <span class="lose">✗ a worg's nose doesn't care how quiet you are</span>`, onclick: `m5_sneak(${C.origin.id === "urchin" ? "true" : "false"})` },
+      { txt: "🔥 Have Sera fire the horse-lines — go in loud through the chaos", req: `(no roll — but the tent's guards hold their post: a hard fight, with Sera at your side)`, onclick: "m5_loud()" } ]);
 }
 function m5_disguise(adv) {
   const res = sceneCheck("Deception", 13, { adv });
@@ -2610,7 +2630,7 @@ function m5_tent() {
       `You crack it and your breath stops. Column after column in a crabbed war-scribe hand: <i>dates, targets, payments</i>. The medicine train — 200 gold. Westmill granary — 350. The Grimhollow farms. The Duskway. Each entry marked paid in sunburst coin, and pinned to the back board, a sheaf of <b>letters in a courtly cipher</b> — the sender too careful to sign, but the ledger's margin note is not careful at all: "<i>the gray man in the city pays double for burnt grain</i>."`,
       `Voices outside — Gar'Thok's own, a growl like siege-stone: "...tell the gray man the price rises again. And tell him I keep his letters safe. Snakes bite the hand that feeds — but not the hand that holds their SECRETS." A laugh like a rockslide. He knows exactly what his paymaster is. He's been keeping insurance.`,
       `<b>(EVIDENCE: Gar'Thok's ledger — proof in his own hand, heavy enough to crack stone.)</b>` ],
-    [ { txt: "🌙 Take everything and ghost away", req: "(Stealth, DC 12)", onclick: "m5_escape()" },
+    [ { txt: "🌙 Take everything and ghost away", req: `(Stealth, DC 12) <span class="win">✓ gone before the camp knows it's been robbed</span> · <span class="lose">✗ horns in the dark — cut your way to the treeline</span>`, onclick: "m5_escape()" },
       { txt: "🔥 Take everything and burn the tent behind you — let the warlord feel it", onclick: "addEvidence('ledger'); startCombat(['eliteGuard','gobArcher'], 'm5_return', { intro: 'The tent goes up like a torch. The first guards through the smoke find you waiting.' })" } ]);
 }
 function m5_escape() {
@@ -3017,7 +3037,7 @@ function c9_opA() {
   scene("⛓", "The Gallows Yard",
     [ `Ser Bram waits in the stocks below a fresh-built scaffold — a knight who carried the King's banner at the Fords, now wearing a placard: <b>DESERTER</b>. The crowd assembling for the dawn hanging is quieter than the criers would like. Some of them knew him. Some of them were pulled from a burning granary by him.`,
       `Two Blackpikes and a Truth-Warden — the Protectorate's new "clerks of honest speech" — hold the yard.` ],
-    [ urchin ? { backstory: true, txt: "🐀 Night work: through the gutter-ways, pick the stock-irons, gone before the dawn bell", req: bkReq("Street Urchin — no blood, no trace"), onclick: "c9_opA_sneak(true)" } : { txt: "🌙 Night work: slip the yard and break the irons quietly", req: "(Stealth, DC 14)", onclick: "c9_opA_sneak(false)" },
+    [ urchin ? { backstory: true, txt: "🐀 Night work: through the gutter-ways, pick the stock-irons, gone before the dawn bell", req: bkReq("Street Urchin — no blood, no trace"), onclick: "c9_opA_sneak(true)" } : { txt: "🌙 Night work: slip the yard and break the irons quietly", req: `(Stealth, DC 14) <span class="win">✓ an empty rope at dawn — the city loves a mystery</span> · <span class="lose">✗ the bell rings early — finish it loud</span>`, onclick: "c9_opA_sneak(false)" },
       { txt: "⚔ Dawn work: take the scaffold in front of the crowd — let them SEE the Protectorate bleed", onclick: "startCombat(['blackpike','inquisitor'], 'c9_opA_done', { intro: 'You step out of the crowd as the drum starts. The Truth-Warden reaches for the writ of execution; you reach for something more persuasive.' })" } ]);
 }
 function c9_opA_sneak(auto) {
@@ -3137,8 +3157,8 @@ function c10_zarga() {
   scene("💀", "The Warchief's Court",
     [ `Zarga's camp makes her father's look like a hunting party — palisades, drilled companies, and a bone-and-iron hall at the center flying a banner you recognize: <b>Gar'Thok's tusks</b>, quartered with her own device, an open LEDGER. The bookkeeping legacy, it seems, is literal.`,
       `You could go in quiet. Or — bold beyond bold — you could go in through the front gate under a peace-branch and treat with the warchief herself.${knows ? " She knows your name. Her father died respecting it — and marching on your intelligence." : ""}` ],
-    [ { backstory: knows, txt: "🕊 Parley — walk into the bone hall under the branch and talk BUSINESS", req: knows ? bkReq("Gar'Thok died acting on your warning — his heir keeps accounts") : "(Persuasion, DC 14 — warchiefs respect nerve)", onclick: "c10_parley()" },
-      { txt: "🌙 Steal the insurance from the bone hall by night", req: "(Stealth, DC 14)", onclick: "c10_steal()" },
+    [ { backstory: knows, txt: "🕊 Parley — walk into the bone hall under the branch and talk BUSINESS", req: (knows ? bkReq("Gar'Thok died acting on your warning — his heir keeps accounts") : "(Persuasion, DC 14 — warchiefs respect nerve)") + ` <span class="win">✓ the insurance, an ally's invoice, and no blood</span> · <span class="lose">✗ the hall doors close behind you</span>`, onclick: "c10_parley()" },
+      { txt: "🌙 Steal the insurance from the bone hall by night", req: `(Stealth, DC 14) <span class="win">✓ rob a warchief twice in one generation</span> · <span class="lose">✗ the Bone-Sworn come for you in the dark</span>`, onclick: "c10_steal()" },
       { txt: "⚔ Cut through her honor guard and take it", onclick: "startCombat(['zargaGuard','zargaGuard'], 'c10_ledger', { ally: { name: 'King Alden', atk: 9, dmg: [1, 10, 6] }, intro: 'The Bone-Sworn meet you at the hall doors. Alden\\'s warhammer answers a debt of two sieges.' })" } ]);
 }
 function c10_parley() {
@@ -3187,7 +3207,7 @@ function c11_moot() {
   scene("🏰", "The Moot of Three Banners",
     [ `Wrenhall's great barn — neutral ground by ancient custom — holds three banners and three cold-eyed magnates: <b>Baron Hallowmere</b> of the grain lands, <b>Baroness Wrenfield</b> of the iron hills, and <b>Baron Coldbrook</b> of the counting-houses. Each received Thorne's poisoned letters months ago. Each watches the returned "coward King" with carefully hedged faces.`,
       `Alden speaks first, plainly, taking the coward's letter apart line by line. Then it's your turn — the case lives in your satchel. Win them one by one. <i>(Proofs in hand: ${p}/3. Barons won: ${flags.baronsWon}/3.)</i>` ],
-    [ !flags.m.done.includes("hallowmere") ? { txt: "🌾 Baron Hallowmere — a decent man made cautious by burnt granaries. He wants to believe; he needs a REASON.", req: "(Persuasion, DC 12 — easier with proofs)", onclick: "c11_baron('hallowmere')" } : null,
+    [ !flags.m.done.includes("hallowmere") ? { txt: "🌾 Baron Hallowmere — a decent man made cautious by burnt granaries. He wants to believe; he needs a REASON.", req: `(Persuasion, DC 12 — easier with proofs${hasFalseEvidence() ? ", HARDER with unverified papers" : ""}) <span class="win">✓ the grain banner dips to the King</span> · <span class="lose">✗ he hedges — "bring the city first"</span>`, onclick: "c11_baron('hallowmere')" } : null,
       !flags.m.done.includes("wrenfield") ? { txt: "⚔ Baroness Wrenfield — iron-country blunt. Words bore her; spines don't.", req: C.origin.id === "soldier" ? bkReq("Soldier's Camp — she knows drill-yard iron when she hears it") : "(Intimidation, DC 13)", onclick: "c11_baron('wrenfield')" } : null,
       !flags.m.done.includes("coldbrook") ? { txt: "💰 Baron Coldbrook — the counting-house. Sentiment is not a currency he accepts.", req: flags.evidence.includes("zargaLedger") ? "(Zarga's ledger speaks his native tongue)" : "(needs hard proof — or 200 gold of 'surety')", onclick: "c11_baron('coldbrook')" } : null
     ].filter(Boolean));
@@ -3483,7 +3503,7 @@ function herringSmugglers() {
     [ `A dockhand slips you a tip that smells like money: a Duskhaven smuggling ring, flush since the raids began, running goods on the same nights the caravans burn. There's even a <b>file</b> — cargo manifests, names, dates — that "fell off" a watch-captain's desk.`,
       `It's tidy. It's damning. It's exactly what you've been looking for.`,
       `<i>Which is worth thinking about.</i>` ],
-    [ { txt: "⚔ Raid the smugglers' warehouse tonight", onclick: "startCombat(['thug','thug'], 'herring1_after', { intro: 'The smugglers keep two hired blades on the door and low expectations behind it. They fight like men defending inventory, not a conspiracy.' })" } ]);
+    [ { txt: "⚔ Raid the smugglers' warehouse tonight", req: `(after the fight: Investigation, DC 13) <span class="win">✓ see the file for what it truly is</span> · <span class="lose">✗ carry home "evidence" someone built for you</span>`, onclick: "startCombat(['thug','thug'], 'herring1_after', { intro: 'The smugglers keep two hired blades on the door and low expectations behind it. They fight like men defending inventory, not a conspiracy.' })" } ]);
 }
 function herring1_after() {
   const res = sceneCheck("Investigation", 13);
@@ -3550,7 +3570,7 @@ function herringWidow_after() {
 
 function hasFalseEvidence() { return flags.evidence.some(e => EVIDENCE[e] && EVIDENCE[e].false); }
 
-Object.assign(SCENES, { patrol_after, herring1_after, herringWidow_after, m4_qm_accuse });
+Object.assign(SCENES, { patrol_after, herring1_after, herringWidow_after, m4_qm_accuse, m2_armory_loot });
 Object.assign(EVIDENCE, {
   smugglerNote: { name: "? Smugglers' cargo manifest — unverified", weight: 0, false: true },
   reqSlip:      { name: "? Quartermaster's requisition slip — unverified", weight: 0, false: true },
