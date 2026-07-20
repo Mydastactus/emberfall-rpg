@@ -30,6 +30,10 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 ![The forge](forge.png)
 
+**Magic weapons — found, never sold** — ten Uncommon named weapons live in the world and none of them have a price tag: the Cinder-Edge Dagger that sets its wounds alight, the Moonlit Shortswords that find gaps in the dark, the Emberbrand Warblade, the Wand of the Winter Court. Each is built on an iron base with an enchantment (fire, frost, lightning, bleeding crits) *and* a durability perk in the wearer's favor — Heat-Sealed blades take no wear from battles where you crit or kill, Everbright steel skips half its wear, Self-Mending weapons knit +3 durability while you sleep. They drop from champions and bosses (and the bellies of mimics), or turn up wrapped in oilcloth at the bottom of the better chests — always forged for *your* class, never twice. The rarity framework is already in place for Rare and Epic tiers in future campaigns.
+
+![Magic weapon drop](magic.png)
+
 **Branching consequences** — an evidence system decides whether the King believes you before or after the knives come out; a moral fork in Chapter 3 echoes into the finale; and multiple fates await the villain.
 
 **Red herrings that bite** — not every lead is real. Planted files, framed quartermasters, and grieving "defectors" wait for investigators who fail their rolls — and carrying unverified evidence into the throne room can sink a case built on truth. Verify before you accuse.
