@@ -24,7 +24,11 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **A living town** — Brannock's Forge for weapon and armor upgrades, Zephyrine's Curiosities for potions and magic items, a training yard to learn new skill proficiencies, and a tavern whose rumors foreshadow each chapter.
 
-**A real armory** — every class has weapon choices with honest tradeoffs (greataxes vs. sword-and-shield, warhammers, flails, three kinds of bow, twin daggers, kamas, hand crossbows) and class-true armor rules: fighters wear anything, rangers top out at scale mail, rogues sneak worse in medium armor, and wizards rely on the Mage Armor ward — plus swappable attack cantrips and learnable spells (Burning Hands, Sleep, Lightning Bolt). Cheap field bandages and alchemist's fire round out the kit, bought in shops or looted along the way.
+**A real armory** — every class has weapon choices with honest tradeoffs (greataxes vs. sword-and-shield, greatswords, spears, halberds, warhammers, flails, three kinds of bow, twin daggers, kamas, hand crossbows) and class-true armor rules: fighters wear anything, rangers top out at scale mail, rogues sneak worse in medium armor, and wizards rely on the Mage Armor ward — plus swappable attack cantrips and learnable spells (Burning Hands, Sleep, Lightning Bolt). Cheap field bandages and alchemist's fire round out the kit, bought in shops or looted along the way.
+
+**Bronze, iron, and steel** — every weapon and armor is forged in a material, and the material is a promise, not a damage number: a Bronze shortsword bites exactly as hard as a Steel one, but bronze holds an edge for ~8 battles, iron for 16, and steel for 30. Worn gear goes *dull* (−2 to attacks) or *battered* (−1 AC) until Brannock repairs it — cheap, but somebody has to pay for the bellows. Iron reaches his racks in Chapter 2 and steel in Chapter 4, though Zephyrine's black market has never respected a supply schedule. Pack a Smith's Kit for field maintenance on long missions — and know that a Kingsteel-forged blade never dulls again. Wizards are exempt on principle: fire does not require honing.
+
+![The forge](forge.png)
 
 **Branching consequences** — an evidence system decides whether the King believes you before or after the knives come out; a moral fork in Chapter 3 echoes into the finale; and multiple fates await the villain.
 
