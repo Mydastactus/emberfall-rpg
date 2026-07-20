@@ -36,7 +36,15 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **A living soundscape, still one file** — a warm royalty-free fantasy ambient score is embedded right in the game and adapts to the fiction: full and bright in town, quieter on the road, and ducked low beneath synthesized war drums and dread drones when blades come out. Every sound effect is synthesized in your browser at the moment it plays: dice clatter, sword rings and crits, coin clinks, healing chimes, war-cry growls, spell shimmers, and a level-up fanfare. Toggle sound and music anytime from the corner controls.
 
-**Save codes** — copy a save code anytime at the Chronicler's Quill and paste it on the title screen to resume. Codes carry your hero (and your choices) across both campaigns. No account, no cookies, no storage.
+**Character portraits** — a consistent hand-built vector portrait style for every major face in the realm: Thorne's grandfatherly warmth, the crowned King, Sera's scar, Vail's duelist stare, Zarga's tusks and bone beads — plus a portrait for each hero class, in dialogue, combat, and the hero sheet.
+
+**Perks & traits at every level** — leveling is a choice now, not just a bigger number. Every level offers one of three class-flavored perks (a fighter braces a shield wall, a rogue befriends every fence in the realm, a wizard overcharges spells), levels 5 and 10 offer a defining **Trait** (Juggernaut, The Ghost, Archmage's Surge...), and the perks you pass over rotate back at levels 6–9. Ninety perks across five classes, every one mechanically real — and old saves catch up with retroactive picks the moment they load.
+
+![Perk choice](perks.png)
+
+**Hero sheet & journal** — one tap on the 📖 opens your full character sheet (stats, gear, every backstory perk explained, every level perk and trait you've chosen) and a living journal that recaps the story so far in light of *your* choices, flags unverified evidence, and tracks the Hearts of the City.
+
+**Autosave + save codes** — your progress autosaves in the browser after every scene, with a Continue button on the title screen. Save codes at the Chronicler's Quill remain as manual backup and for carrying heroes between devices.
 
 ## Credits
 
