@@ -6,7 +6,7 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **▶ [Play it here](https://mydastactus.github.io/emberfall-rpg/)**
 
-![Title screen](screenshots/title.png)
+![Title screen](title.png)
 
 ## The Story
 
@@ -18,11 +18,11 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **Deep character creation** — 6 races, 5 classes, ability scores by 4d6-drop-lowest or standard array, and a three-part backstory (origin, defining event, motivation) you can hand-pick or leave to the dice. Every backstory choice grants a mechanical perk *and* unlocks unique dialogue and paths through the campaign.
 
-![Character creation](screenshots/creation.png)
+![Character creation](creation.png)
 
 **D&D-style rules engine** — d20 skill checks with advantage, armor class, proficiency that scales with level, turn-based combat with initiative, class abilities, critical hits, and a live dice log showing every roll's math. Enemies fight like they mean it: cowards break and flee, soldiers raise shields and parry, wolves hunt in packs — and bosses telegraph massive blows you can Defend against, bash you senseless, hamstring your footwork, poison your blood, and bellow war cries only the dragonfire-touched can ignore. Every status is visible, every save is rolled in the open. And the math has teeth: careless play wins roughly half its fights from mid-campaign on, smart play — reading telegraphs, Defending the big blows, provisioning before you ride — pushes toward 75–80%. Lord-Blade Vail's honor duel is tuned to be the hardest fight a level-10 hero has ever seen: she strikes twice a round when pressed, and answers every mid-fight potion with steel.
 
-![Combat](screenshots/combat.png)
+![Combat](combat.png)
 
 **A living town** — Brannock's Forge for weapon and armor upgrades, Zephyrine's Curiosities for potions and magic items, a training yard to learn new skill proficiencies, and a tavern whose rumors foreshadow each chapter.
 
@@ -30,11 +30,11 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **Bronze, iron, and steel** — every weapon and armor is forged in a material, and the material is a promise, not a damage number: a Bronze shortsword bites exactly as hard as a Steel one, but bronze holds an edge for ~8 battles, iron for 16, and steel for 30. Worn gear goes *dull* (−2 to attacks) or *battered* (−1 AC) until Brannock repairs it — cheap, but somebody has to pay for the bellows. Iron reaches his racks in Chapter 2 and steel in Chapter 4, though Zephyrine's black market has never respected a supply schedule. Pack a Smith's Kit for field maintenance on long missions — and know that a Kingsteel-forged blade never dulls again. Wizards are exempt on principle: fire does not require honing.
 
-![The forge](screenshots/forge.png)
+![The forge](forge.png)
 
 **Magic weapons — found, never sold** — ten Uncommon named weapons live in the world and none of them have a price tag: the Cinder-Edge Dagger that sets its wounds alight, the Moonlit Shortswords that find gaps in the dark, the Emberbrand Warblade, the Wand of the Winter Court. Each is built on an iron base with an enchantment (fire, frost, lightning, bleeding crits) *and* a durability perk in the wearer's favor — Heat-Sealed blades take no wear from battles where you crit or kill, Everbright steel skips half its wear, Self-Mending weapons knit +3 durability while you sleep. They drop from champions and bosses (and the bellies of mimics), or turn up wrapped in oilcloth at the bottom of the better chests — always forged for *your* class, never twice. The rarity framework is already in place for Rare and Epic tiers in future campaigns.
 
-![Magic weapon drop](screenshots/magic.png)
+![Magic weapon drop](magic.png)
 
 **Branching consequences** — an evidence system decides whether the King believes you before or after the knives come out; a moral fork in Chapter 3 echoes into the finale; and multiple fates await the villain.
 
@@ -46,7 +46,7 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **Roads of chance** — the ride to a mission doesn't always go to plan. About one departure in three is waylaid: scavenger ambushes, deserters' tolls, half-buried strongboxes, smugglers' caches, loyalist dead-drops — and the occasional chest that is, on closer inspection, faintly *wet*. Every chest and cache is opened on a skill check with the reward and the trap printed right on the button. Fights can drop spoils too: gold, potions, alchemist's fire — and four rare unique treasures (the Whetstone of Old Wars, Wayfarer's Boots, the Ironheart Locket, the Duelist's Band) that no shop will ever sell and no save will ever drop twice.
 
-![Waylay](screenshots/waylay.png)
+![Waylay](waylay.png)
 
 **A nation's story, beginning** — Thorne answered to someone. The gray wax seal of the Second Chair waits in the epilogue, and future campaigns will carry the fight to the rest of the realm.
 
@@ -56,7 +56,7 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **Perks & traits at every level** — leveling is a choice now, not just a bigger number. Every level offers one of three class-flavored perks (a fighter braces a shield wall, a rogue befriends every fence in the realm, a wizard overcharges spells), levels 5 and 10 offer a defining **Trait** (Juggernaut, The Ghost, Archmage's Surge...), and the perks you pass over rotate back at levels 6–9. Ninety perks across five classes, every one mechanically real — and old saves catch up with retroactive picks the moment they load.
 
-![Perk choice](screenshots/perks.png)
+![Perk choice](perks.png)
 
 **Hero sheet & journal** — one tap on the 📖 opens your full character sheet (stats, gear, every backstory perk explained, every level perk and trait you've chosen) and a living journal that recaps the story so far in light of *your* choices, flags unverified evidence, and tracks the Hearts of the City.
 
