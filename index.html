@@ -1152,37 +1152,38 @@ const MOTIVES = [
 
 /* ---------------- MONSTERS ---------------- */
 const MONSTERS = {
-  goblin:   { name: "Goblin Raider", icon: "👺", hp: 9,  ac: 13, atk: 3, dmg: [1, 6, 2], xp: 50, tr: { morale: "craven", moves: [] } },
-  goblin2:  { name: "Goblin Sneak", icon: "👺", hp: 7,  ac: 14, atk: 3, dmg: [1, 4, 1], xp: 50, tr: { morale: "craven", moves: [] } },
+  goblin:   { name: "Goblin Raider", icon: "👺", hp: 9,  ac: 13, atk: 4, dmg: [1, 6, 2], xp: 50, tr: { morale: "craven", moves: [] } },
+  goblin2:  { name: "Goblin Sneak", icon: "👺", hp: 7,  ac: 14, atk: 4, dmg: [1, 4, 1], xp: 50, tr: { morale: "craven", moves: [] } },
   gobArcher:{ name: "Goblin Archer", icon: "🏹", hp: 8,  ac: 13, atk: 4, dmg: [1, 6, 1], xp: 50, tr: { morale: "craven", moves: [] } },
-  snagfang: { name: "Captain Snagfang", icon: "👺", hp: 15, ac: 14, atk: 5, dmg: [1, 6, 3], xp: 100, tr: { morale: "steady", moves: [] } },
+  snagfang: { name: "Captain Snagfang", icon: "👺", hp: 18, ac: 14, atk: 6, dmg: [1, 6, 3], xp: 100, tr: { morale: "steady", moves: [] } },
   wolf:     { name: "Shadow Wolf", icon: "🐺", hp: 13, ac: 12, atk: 4, dmg: [2, 4, 2], xp: 60, tr: { morale: "craven", moves: ["pack"] } },
-  worg:     { name: "Worg", icon: "🐺", hp: 20, ac: 13, atk: 5, dmg: [2, 6, 2], xp: 150, tr: { morale: "steady", moves: ["pack", "hamstring"] } },
-  guard:    { name: "Hobgoblin Guard", icon: "👹", hp: 16, ac: 15, atk: 5, dmg: [1, 8, 2], xp: 100, tr: { morale: "steady", moves: ["shieldbash"] } },
-  hobgoblin:{ name: "Hobgoblin Soldier", icon: "👹", hp: 16, ac: 15, atk: 5, dmg: [1, 8, 2], xp: 100, tr: { morale: "steady", moves: ["shieldbash"] } },
-  grukk:    { pkey: "grukk", name: "Lieutenant Grukk", icon: "😈", hp: 26, ac: 15, atk: 5, dmg: [2, 4, 3], xp: 300, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
+  worg:     { name: "Worg", icon: "🐺", hp: 24, ac: 13, atk: 6, dmg: [2, 6, 2], xp: 150, tr: { morale: "steady", moves: ["pack", "hamstring"] } },
+  guard:    { name: "Hobgoblin Guard", icon: "👹", hp: 20, ac: 15, atk: 6, dmg: [1, 8, 3], xp: 100, tr: { morale: "steady", moves: ["shieldbash"] } },
+  hobgoblin:{ name: "Hobgoblin Soldier", icon: "👹", hp: 18, ac: 15, atk: 6, dmg: [1, 8, 2], xp: 100, tr: { morale: "steady", moves: ["shieldbash"] } },
+  grukk:    { pkey: "grukk", name: "Lieutenant Grukk", icon: "😈", hp: 40, ac: 15, atk: 8, dmg: [2, 6, 4], xp: 300, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
   thug:     { name: "Hired Blade", icon: "🥷", hp: 12, ac: 13, atk: 4, dmg: [1, 6, 2], xp: 50, tr: { morale: "craven", moves: [] } },
-  vex:      { name: "Captain Vex", icon: "👹", hp: 22, ac: 16, atk: 5, dmg: [1, 8, 3], xp: 250, tr: { morale: "steady", moves: ["shieldbash", "warcry"] } },
+  vex:      { name: "Captain Vex", icon: "👹", hp: 30, ac: 16, atk: 7, dmg: [1, 8, 4], xp: 250, tr: { morale: "steady", moves: ["shieldbash", "warcry"] } },
   orcBrute: { name: "Orc Brute", icon: "🧌", hp: 26, ac: 14, atk: 6, dmg: [2, 6, 2], xp: 250, tr: { morale: "steady", moves: ["cleave"] } },
-  eliteGuard:{ name: "Blackpike Elite", icon: "🛡️", hp: 20, ac: 16, atk: 6, dmg: [1, 8, 3], xp: 200, tr: { morale: "steady", moves: ["shieldbash"] } },
-  assassin: { name: "Veiled Assassin", icon: "🗡️", hp: 16, ac: 15, atk: 7, dmg: [1, 6, 4], xp: 250, tr: { morale: "craven", moves: ["poison"] } },
-  ogre:     { name: "Siege Ogre", icon: "👹", hp: 36, ac: 13, atk: 7, dmg: [2, 8, 4], xp: 450, tr: { morale: "steady", moves: ["cleave"] } },
-  garthok:  { pkey: "garthok", name: "Warlord Gar'Thok", icon: "😈", hp: 66, ac: 17, atk: 8, dmg: [2, 8, 5], xp: 900, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
-  garthokWounded: { pkey: "garthok", name: "Warlord Gar'Thok (wounded)", icon: "😈", hp: 48, ac: 17, atk: 8, dmg: [2, 8, 5], xp: 900, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
-  vail:     { pkey: "vail", name: "Captain Vail", icon: "🤺", hp: 34, ac: 17, atk: 7, dmg: [1, 8, 5], xp: 500, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
+  eliteGuard:{ name: "Blackpike Elite", icon: "🛡️", hp: 28, ac: 16, atk: 8, dmg: [1, 8, 4], xp: 200, tr: { morale: "steady", moves: ["shieldbash"] } },
+  assassin: { name: "Veiled Assassin", icon: "🗡️", hp: 20, ac: 15, atk: 8, dmg: [1, 6, 4], xp: 250, tr: { morale: "craven", moves: ["poison"] } },
+  ogre:     { name: "Siege Ogre", icon: "👹", hp: 46, ac: 13, atk: 8, dmg: [2, 8, 4], xp: 450, tr: { morale: "steady", moves: ["cleave"] } },
+  garthok:  { pkey: "garthok", name: "Warlord Gar'Thok", icon: "😈", hp: 78, ac: 17, atk: 10, dmg: [2, 8, 5], xp: 900, flurryAt: 0.25, tr: { morale: "fearless", moves: ["warcry", "cleave", "flurry"] } },
+  garthokWounded: { pkey: "garthok", name: "Warlord Gar'Thok (wounded)", icon: "😈", hp: 62, ac: 17, atk: 10, dmg: [2, 8, 6], xp: 900, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
+  vail:     { pkey: "vail", name: "Captain Vail", icon: "🤺", hp: 44, ac: 17, atk: 8, dmg: [1, 8, 5], xp: 500, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
   /* --- Campaign 2 --- */
-  assassin2:  { name: "Gray Web Assassin", icon: "🗡️", hp: 26, ac: 16, atk: 9, dmg: [1, 6, 6], xp: 350, tr: { morale: "craven", moves: ["poison"] } },
-  blackpike:  { name: "Blackpike Enforcer", icon: "🥷", hp: 30, ac: 16, atk: 7, dmg: [1, 8, 4], xp: 300, tr: { morale: "steady", moves: ["shieldbash"] } },
-  inquisitor: { name: "Truth-Warden", icon: "🕵️", hp: 26, ac: 15, atk: 7, dmg: [2, 6, 2], xp: 300, tr: { morale: "steady", moves: [] } },
-  ghoul:      { name: "Catacomb Ghoul", icon: "🧟", hp: 28, ac: 14, atk: 7, dmg: [2, 6, 3], xp: 300, tr: { morale: "fearless", moves: ["paralyze"] } },
-  orcVet:     { name: "Orc Veteran", icon: "🧌", hp: 34, ac: 15, atk: 7, dmg: [1, 12, 4], xp: 350, tr: { morale: "steady", moves: ["cleave"] } },
-  zargaGuard: { name: "Bone-Sworn Guard", icon: "💀", hp: 38, ac: 16, atk: 8, dmg: [2, 6, 4], xp: 400, tr: { morale: "steady", moves: ["shieldbash"] } },
-  palaceElite:{ name: "Protectorate Elite", icon: "🛡️", hp: 40, ac: 17, atk: 8, dmg: [1, 10, 4], xp: 450, tr: { morale: "steady", moves: ["shieldbash"] } },
-  vail2:      { pkey: "vail", name: "Lord-Blade Vail", icon: "🤺", hp: 64, ac: 18, atk: 9, dmg: [2, 8, 4], xp: 900, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
-  zarga:      { pkey: "zarga", name: "Warchief Zarga", icon: "😈", hp: 72, ac: 17, atk: 9, dmg: [2, 8, 5], xp: 1100, tr: { morale: "fearless", moves: ["warcry", "cleave"] } },
+  assassin2:  { name: "Gray Web Assassin", icon: "🗡️", hp: 48, ac: 16, atk: 12, dmg: [1, 8, 7], xp: 350, tr: { morale: "craven", moves: ["poison"] } },
+  blackpike:  { name: "Blackpike Enforcer", icon: "🥷", hp: 48, ac: 16, atk: 10, dmg: [1, 10, 5], xp: 300, tr: { morale: "steady", moves: ["shieldbash"] } },
+  inquisitor: { name: "Truth-Warden", icon: "🕵️", hp: 38, ac: 15, atk: 9, dmg: [2, 6, 4], xp: 300, tr: { morale: "steady", moves: [] } },
+  ghoul:      { name: "Catacomb Ghoul", icon: "🧟", hp: 46, ac: 14, atk: 11, dmg: [2, 6, 5], xp: 300, tr: { morale: "fearless", moves: ["paralyze"] } },
+  orcVet:     { name: "Orc Veteran", icon: "🧌", hp: 56, ac: 15, atk: 10, dmg: [1, 12, 6], xp: 350, tr: { morale: "steady", moves: ["cleave"] } },
+  zargaGuard: { name: "Bone-Sworn Guard", icon: "💀", hp: 66, ac: 16, atk: 11, dmg: [2, 6, 6], xp: 400, tr: { morale: "steady", moves: ["shieldbash"] } },
+  palaceElite:{ name: "Protectorate Elite", icon: "🛡️", hp: 64, ac: 17, atk: 11, dmg: [1, 10, 6], xp: 450, tr: { morale: "steady", moves: ["shieldbash"] } },
+  vail2:      { pkey: "vail", name: "Lord-Blade Vail", icon: "🤺", hp: 190, ac: 20, atk: 13, dmg: [2, 10, 4], xp: 1600, flurryAt: 2, tr: { morale: "fearless", moves: ["riposte", "hamstring", "cleave", "flurry", "punish"] } },
+  vailGate:   { pkey: "vail", name: "Lord-Blade Vail", icon: "🤺", hp: 140, ac: 18, atk: 13, dmg: [2, 8, 6], xp: 1200, tr: { morale: "fearless", moves: ["riposte", "hamstring"] } },
+  zarga:      { pkey: "zarga", name: "Warchief Zarga", icon: "😈", hp: 130, ac: 17, atk: 11, dmg: [2, 10, 6], xp: 1600, tr: { morale: "fearless", moves: ["warcry", "cleave", "flurry"] } },
   /* --- roadside horrors --- */
-  mimic:      { name: "Mimic", icon: "🧰", hp: 30, ac: 14, atk: 7, dmg: [2, 6, 2], xp: 250, tr: { morale: "fearless", moves: [] } },
-  mimicElder: { name: "Elder Mimic", icon: "🧰", hp: 46, ac: 15, atk: 9, dmg: [2, 8, 3], xp: 500, tr: { morale: "fearless", moves: ["cleave"] } }
+  mimic:      { name: "Mimic", icon: "🧰", hp: 36, ac: 14, atk: 8, dmg: [2, 6, 2], xp: 250, tr: { morale: "fearless", moves: [] } },
+  mimicElder: { name: "Elder Mimic", icon: "🧰", hp: 70, ac: 15, atk: 11, dmg: [2, 8, 5], xp: 500, tr: { morale: "fearless", moves: ["cleave"] } }
 };
 
 /* ---------------- STATE ---------------- */
@@ -1785,7 +1786,7 @@ function playerAttack(foeId, opts = {}) {
     sfx("miss");
     clog(`<span class="player-act">Your attack misses ${esc(foe.name)}.</span>`);
     if (foe.stance && foe.hp > 0) {
-      const cd = roll(1, 8).total + 3;
+      const cd = roll(1, 8).total + Math.max(3, foe.atk - 2);
       clog(`🤺 <b>Riposte!</b> ${esc(foe.name)} answers your miss with a flickering counter.`, "sys");
       if (applyDamageToPlayer(cd, foe.name, { msg: `<span class="enemy-act">The counter-cut takes you for <b>{d}</b> damage.</span>` }) === "dead") return;
     }
@@ -1901,6 +1902,7 @@ function useBandageCombat() {
   if (!combat.playerTurn || combat.over || (C.status && C.status.stunned)) return;
   if (useBandage()) {
     clog(`<span class="player-act">🩹 You bind the worst of it mid-fight. (${C.hp}/${C.maxHp} HP)</span>`);
+    if (punishOpening("your busy hands") === "dead") return;
     endPlayerTurn();
   }
 }
@@ -1927,8 +1929,18 @@ function combatPotion() {
   if (!combat.playerTurn || combat.over || (C.status && C.status.stunned)) return;
   if (usePotion()) {
     clog(`<span class="player-act">🧪 You gulp a healing potion. (${C.hp}/${C.maxHp} HP)</span>`);
+    if (punishOpening("the bottle at your lips") === "dead") return;
     endPlayerTurn();
   }
+}
+
+/* Duelists punish openings — drinking or binding wounds in front of them costs a free attack. */
+function punishOpening(what) {
+  if (!combat || combat.over) return "ok";
+  const foe = livingFoes().find(f => f.tr && f.tr.moves.includes("punish"));
+  if (!foe) return "ok";
+  clog(`🤺 <b>${esc(foe.name)} does not wait</b> — the blade darts in at ${what}!`, "sys");
+  return foeAttack(foe, { label: "punishing thrust" }) === "dead" ? "dead" : "ok";
 }
 
 function tryFlee() {
@@ -2183,10 +2195,15 @@ function enemyTurn() {
       clog(`🛡 ${esc(foe.name)} falls back behind its guard (+3 AC until its next turn).`, "sys");
       continue;
     }
-    // 9. normal attack (pack tactics: advantage beside a living packmate)
+    // 9. normal attack (pack tactics: advantage beside a living packmate; flurry: wounded duelists strike twice)
     const packAdv = tr.moves.includes("pack") && livingFoes().some(f => f !== foe && f.tr && f.tr.moves.includes("pack"));
     if (packAdv) clog(`🐺 The pack circles — they strike as one.`, "sys");
-    if (foeAttack(foe, { adv: packAdv }) === "dead") return;
+    const swings = (tr.moves.includes("flurry") && foe.hp < foe.maxHp * (foe.flurryAt || 0.5)) ? 2 : 1;
+    if (swings === 2 && !foe.flurryTold) { foe.flurryTold = true; clog(`⚔⚔ <b>${esc(foe.name)} stops holding back</b> — the blade blurs into a flurry (two strikes a round)!`, "sys"); }
+    for (let sw = 0; sw < swings; sw++) {
+      if (foe.hp <= 0) break;
+      if (foeAttack(foe, { adv: packAdv, label: sw ? "flurry" : undefined }) === "dead") return;
+    }
     if (foe.rally > 0) foe.rally--;
   }
   if (checkCombatEnd()) return;
@@ -3798,7 +3815,7 @@ function c11_strike() {
   scene("🗡", "Knives at the Moot",
     [ `The moot breaks for the night with ${flags.baronsWon} banner${flags.baronsWon === 1 ? "" : "s"} dipped to the King — and the Gray Web's answer arrives before the candles are out. They come through the barn's high loft, silent as falling dust: not for the barons. For <b>Alden</b>. A dead King at a moot he called would end everything neatly.`,
       `But this time the King is not alone, not deceived, and not — as the first assassin discovers upon meeting a thrown warhammer — remotely in the mood.` ],
-    [ { txt: "⚔ Defend the King!", onclick: "startCombat(['assassin2','assassin2','blackpike'], 'c11_end', { ally: { name: 'King Alden', atk: 9, dmg: [1, 10, 6] }, intro: 'Wrenfield fights bare-handed with a bench until she reaches her axe, bellowing happily about honest robbery.' })" } ]);
+    [ { txt: "⚔ Defend the King!", onclick: "startCombat(['assassin2','assassin2','blackpike','assassin'], 'c11_end', { ally: { name: 'King Alden & Wrenfield', atk: 11, dmg: [2, 8, 6] }, intro: 'Wrenfield fights bare-handed with a bench until she reaches her axe, bellowing happily about honest robbery.' })" } ]);
 }
 function c11_end() {
   const bonus = flags.baronsWon >= 2 ? `The barons see the Web's knives with their own eyes — sent to silence a moot called under ancient right. Whatever hedging survived the evening dies with the assassins. By dawn, ${flags.baronsWon === 3 ? "all three banners" : "the dipped banners"} are raising levies.` : `Even the hedging barons saw the knives. None will march for Thorne now — and Hallowmere quietly sends grain north to the vanguard "against the King's return."`;
@@ -3835,8 +3852,8 @@ function c12_palace() {
     [ `The palace stairs, the long gallery, the doors of the balcony chamber — and before them, alone, unhurried, stands <b>Lord-Blade Vail</b>, sword still sheathed, watching your approach like the final line of a contract.`,
       `"He's on the balcony," she says conversationally. "Rehearsing, if you can believe it. The 'noble surrender' speech. It's quite good." She draws — one smooth whisper of steel. "I took his coin. This is where coin like that gets spent. You understand — you're the same breed. Loyal to something even when it ruins you."`,
       `She levels the blade — at you alone. "The duel, hero. Your friends pass either way; my contract names YOU. Give me an ending worth the wage."` ],
-    [ { txt: "🤺 Honor the duel — alone, blade to blade", req: "(she yields if beaten — and a yielded Vail talks)", onclick: "startCombat(['vail2'], 'c12_vail_yield', { intro: 'The gallery empties around you both. Vail salutes — and becomes several places at once.' })" },
-      { txt: "⚔ No duels. No theater. Take her together.", onclick: "startCombat(['vail2','palaceElite'], 'c12_vail_dead', { ally: { name: 'King Alden', atk: 9, dmg: [1, 10, 6] }, intro: 'Vail sighs — \"Prose it is\" — and her reserve steps from the alcoves.' })" } ]);
+    [ { txt: "🤺 Honor the duel — alone, blade to blade", req: `(she yields if beaten — and a yielded Vail talks) <span class="lose">✗ the hardest fight of your life: she strikes twice a round, and drinking or binding wounds gives her a free thrust</span>`, onclick: "startCombat(['vail2'], 'c12_vail_yield', { intro: 'The gallery empties around you both. Vail salutes — and becomes several places at once. Every opening you give her — every bottle, every bandage — will be answered in steel.' })" },
+      { txt: "⚔ No duels. No theater. Take her together.", onclick: "startCombat(['vailGate','palaceElite'], 'c12_vail_dead', { ally: { name: 'King Alden', atk: 9, dmg: [1, 10, 6] }, intro: 'Vail sighs — \"Prose it is\" — and her reserve steps from the alcoves.' })" } ]);
 }
 function c12_vail_yield() {
   flags.vailYielded = true;
@@ -4189,7 +4206,7 @@ function wlOpenChest(i) {
     scene(c.art, c.title + " — Opened", [ `${c.winScene}. Inside: <b>${g} gold</b>${(c.items || []).length ? " and <b>" + c.items.join("</b>, <b>") + "</b>" : ""}.${rare}` ],
       [ { txt: "🛤 Press on to where you were headed", onclick: "wlContinue()" } ]);
   } else if (c.trap) {
-    const dmg = roll(c.trap[0], c.trap[1]).total;
+    const dmg = Math.round(roll(c.trap[0], c.trap[1]).total * (1 + 0.35 * (lootTier() - 1)));
     C.hp = Math.max(1, C.hp - dmg);
     sfx("thud");
     logRoll("🪤 Trap!", `${c.trap[0]}d${c.trap[1]} = ${dmg} damage`, "fail");
