@@ -40,6 +40,8 @@ A single-file, browser-based solo RPG with D&D-style rules — no installs, no d
 
 **Patrols & random encounters** — the roads between missions hold ambushes, wolf packs, overturned carts, wayside shrines, and gray riders with strange seals. Leveling is earned now: story missions alone won't carry you, and the wise hero rides patrol.
 
+**The Small Debts** — Hearts of the City isn't just won with operations. At the Ember, Sera keeps a second list — names, no pay: a widow calling a cat's name into alleys, a baker whose ovens were seized for the crime of feeding people, a mother whose daughter went into a holding yard, a locksmith who "fell drunk into the canal" after refusing to copy treasury keys, a nineteen-year-old who took Blackpike coin for his mother's sake. Five folk quests with real stakes printed on every button — botch them and daughters ship east, widows flee by night, sons re-up out of shame. Help them, and on the night the city opens its own gates, you'll know the hands on the bolts by name.
+
 **Roads of chance** — the ride to a mission doesn't always go to plan. About one departure in three is waylaid: scavenger ambushes, deserters' tolls, half-buried strongboxes, smugglers' caches, loyalist dead-drops — and the occasional chest that is, on closer inspection, faintly *wet*. Every chest and cache is opened on a skill check with the reward and the trap printed right on the button. Fights can drop spoils too: gold, potions, alchemist's fire — and four rare unique treasures (the Whetstone of Old Wars, Wayfarer's Boots, the Ironheart Locket, the Duelist's Band) that no shop will ever sell and no save will ever drop twice.
 
 ![Waylay](screenshots/waylay.png)

@@ -1541,6 +1541,8 @@ function sidebar() {
       ? `<div class="center" style="margin-top:6px"><button style="font-size:.85em;padding:6px 12px" onclick="sidebarBandage()">🩹 Apply bandages</button></div>` : ""}
     ${(!combat || combat.over) && C.items.includes("Smith's Kit") && gearNeedsKit()
       ? `<div class="center" style="margin-top:6px"><button style="font-size:.85em;padding:6px 12px" onclick="useSmithKit()">🧰 Smith's Kit (+5 durability)</button></div>` : ""}
+    ${(!combat || combat.over) && C.hp < C.maxHp && C.items.includes("Tammis' Seedcake")
+      ? `<div class="center" style="margin-top:6px"><button style="font-size:.85em;padding:6px 12px" onclick="useSeedcake()">🍞 Eat Tammis' seedcake</button></div>` : ""}
   </div>
   <div class="side-panel"><h3>🎲 Dice Log</h3><div id="dice-log">${diceLogEntries.map(e =>
     `<div class="roll-entry ${e.cls || ""}"><b>${esc(e.label)}</b><div class="roll-detail">${esc(e.detail)}</div></div>`).join("") || '<span class="card-tag">The dice await...</span>'}</div>
@@ -1897,6 +1899,14 @@ function useBandage() {
   C.items.splice(i, 1);
   heal(Math.round((d(4) + 2) * (pfx().potionMult || 1)), "🩹 Field Bandages");
   return true;
+}
+function useSeedcake() {
+  if (combat && !combat.over) return;
+  const i = C.items.indexOf("Tammis' Seedcake");
+  if (i === -1) return;
+  C.items.splice(i, 1);
+  heal(Math.round((roll(2, 4).total + 4) * (pfx().potionMult || 1)), "🍞 Tammis' Seedcake");
+  const sc = $("sidebar-col"); if (sc) sc.innerHTML = sidebar();
 }
 function useBandageCombat() {
   if (!combat.playerTurn || combat.over || (C.status && C.status.stunned)) return;
@@ -2424,7 +2434,7 @@ function makeSaveCode() {
       opsDone: flags.opsDone || [], bramSaved: !!flags.bramSaved, zargaDeal: !!flags.zargaDeal,
       baronsWon: flags.baronsWon || 0, kingRestored: !!flags.kingRestored, decoyRefused: !!flags.decoyRefused,
       herring1Done: !!flags.herring1Done, herring1Solved: !!flags.herring1Solved, herringWidowDone: !!flags.herringWidowDone,
-      mootDone: flags.mootDone || null,
+      mootDone: flags.mootDone || null, folk: flags.folk || {},
       embarrassed: !!flags.embarrassed, patrolC: flags.patrolC || 0, lastPatrolChapter: flags.lastPatrolChapter || 0,
       uniquesFound: flags.uniquesFound || [], wlDone: flags.wlDone || {} }
   };
@@ -3549,11 +3559,12 @@ function emberTownScene() {
     [ `The cellar under the old tannery smells of tallow, wet wool, and sedition. Sera's charcoal map covers one wall; the other holds a growing gallery of the disappeared. ${flags.bramSaved ? "Ser Bram drills volunteers by candlelight, teaching baker's boys to hold a spear line." : ""} Above your heads, Ironvale cheers its Lord Protector — and quietly, house by house, some of it has begun to wonder.`,
       ch === 13 ? `The bells are ringing. It's truly over this time.` : `` ].filter(Boolean),
     [ { txt: `🗺 The war table — ${ch === 13 ? "the aftermath" : "next move"} <b>(${CHAPTER_NAMES[ch] || ""})</b>`, onclick: "goScene('council')" },
+      ch <= 12 ? { txt: `🏮 Word from the streets — who needs help${folkOpenCount() ? ` <b>(${folkOpenCount()})</b>` : ""}`, onclick: "goScene('folkboard')" } : null,
       { txt: "🧿 The Black Market — gear the Protectorate can't trace", onclick: "goScene('blackmarket')" },
       { txt: "🌆 Slip up to the surface — forge, curiosities, training yard, the Griffin", onclick: "goScene('surface')" },
       { txt: "🛏 Rest in the safehouse (free — full heal)", onclick: "C.hp = C.maxHp; logRoll('🛏 Rest','Safehouse cot. Fully healed.','success'); restMend(); goScene('town')" },
       { txt: "🐎 Night patrol (5 gold supplies) — the occupied city never runs out of trouble", onclick: "patrolRoll()" },
-      { txt: "🪶 Chronicler's Quill — save your tale", onclick: "showSaveScreen()" } ]);
+      { txt: "🪶 Chronicler's Quill — save your tale", onclick: "showSaveScreen()" } ].filter(Boolean));
 }
 function surfaceScene() {
   scene("🌆", "The Surface Streets",
@@ -3843,7 +3854,7 @@ function c12_stage() {
 function c12_open_gates() {
   addTruth(10, "the city opens its own gates");
   scene("🌙", "The Midnight Bell",
-    [ `At the twelfth stroke, Ironvale's east gates swing wide from WITHIN — hauled by bakers and fletchers and a one-armed granary clerk, by the widow who lost her crossbow and the miller's boy who learned which end of a spear matters. No assault. No storm. The King walks into his city through a corridor of silent, weeping citizens, and the Blackpikes on the walls look at the crowd, do the arithmetic themselves, and ground their pikes.`,
+    [ `At the twelfth stroke, Ironvale's east gates swing wide from WITHIN — hauled by bakers and fletchers and a one-armed granary clerk, by the widow who lost her crossbow and the miller's boy who learned which end of a spear matters.${folkGateLines()} No assault. No storm. The King walks into his city through a corridor of silent, weeping citizens, and the Blackpikes on the walls look at the crowd, do the arithmetic themselves, and ground their pikes.`,
       `The corridor of people leads all the way to the palace steps — where the last loyal remnant of the Protectorate waits, because some contracts specify to the end.` ],
     [ { txt: "🏛 To the palace steps", onclick: "startCombat(['palaceElite','blackpike'], 'c12_palace', { surprise: true, ally: { name: 'King Alden', atk: 9, dmg: [1, 10, 6] }, intro: 'The remnant fights with the grimness of men whose employer is watching from a balcony.' })" } ]);
 }
@@ -3905,6 +3916,9 @@ function epilogue2Scene() {
   if (flags.bramSaved) realm.push(`<b>Ser Bram</b> rebuilds the vanguard from the branded and the pardoned, and drills the Ember's baker's boys into the realm's strangest, proudest company.`);
   realm.push(`<b>Sera</b> — huntmaster, spymaster, kingmaker, technically still discharged — refuses every title until Alden simply names the new rangers "Sera's" in the founding charter, which she pretends to hate.`);
   if (flags.zargaDeal && kind !== "daylight") realm.push(`<b>Zarga's</b> invoice is honored to the ounce. The horde winters east, trading instead of raiding, and border children grow up thinking of orc merchants as ordinary — her father's true monument.`);
+  const helped = folkHelpedCount();
+  if (helped >= 3) realm.push(`And in the small streets, the war has other monuments: Tammis' ovens never cool now, Maribel owns a windowsill in the sun, and the people you helped one by one — the ones nobody paid you for — tell the story of the Ember not as an army, but as <b>a neighbor</b>. That version outlives every ballad.`);
+  else if (helped >= 1) realm.push(`And in one small street at least, someone tells the story of the Ember not as an army but as a neighbor — because when nobody was paying, you helped anyway.`);
 
   const ep = {
     revenge: `Two conspiracies unmasked. Two puppet-masters balanced against their own ledgers. You sit with that for a long while on the palace steps — and find, to your surprise, that the old name carved in your heart weighs almost nothing now. Not because the debt is gone. Because you finally know, twice over and beyond argument, that you are the kind of person who collects. Whoever they are — they should settle up before you come looking.`,
@@ -4254,6 +4268,328 @@ const WAYLAYS = [
 Object.assign(SCENES, { waylay_loot: waylayLootScene, waylay_fled: waylayFledScene });
 
 /* ============================================================
+   THE SMALL DEBTS — folk quests: the city, one person at a time
+   ============================================================ */
+function folkState() { flags.folk = flags.folk || {}; return flags.folk; }
+function folkHelpedCount() { const f = folkState(); return ["cat", "bake", "tessa", "voss", "corin"].filter(k => f[k] === "done").length; }
+function folkOpenCount() {
+  const f = folkState(), ch = flags.chapter;
+  let n = 0;
+  if (ch >= 8 && !["done"].includes(f.cat)) n++;
+  if (ch >= 8 && !["done"].includes(f.bake)) n++;
+  if (ch >= 9 && !["done", "lost"].includes(f.tessa)) n++;
+  if (ch >= 9 && !["done", "lost"].includes(f.voss)) n++;
+  if (ch >= 10 && !["done", "lost"].includes(f.corin)) n++;
+  return n;
+}
+function folkRow(icon, title, sub, sceneId, state) {
+  if (state === "done") return `<button disabled>✓ ${icon} ${title} <span class="req">— ${sub}</span></button>`;
+  if (state === "lost") return `<button disabled>🕯 ${icon} ${title} <span class="req">— ${sub}</span></button>`;
+  return `<button onclick="goScene('${sceneId}')">${icon} ${title} <span class="req">${sub}</span></button>`;
+}
+function folkBoard() {
+  const f = folkState(), ch = flags.chapter;
+  const rows = [];
+  if (ch >= 8) {
+    rows.push(folkRow("🐈", "Widow Ottley's cat", f.cat === "done" ? "Maribel sleeps on the widow's sill again" : "an old woman in the bread line keeps calling a name into alleys", "folk_cat", f.cat));
+    rows.push(folkRow("🍞", "Tammis the baker", f.bake === "done" ? "the Ember eats real bread now" : "his ovens seized for 'hoarding' — he was feeding the bread lines", "folk_bake", f.bake));
+  }
+  if (ch >= 9) {
+    rows.push(folkRow("🎀", "Anna Brooke's daughter", f.tessa === "done" ? "Tessa is home, and her mother has stopped standing at the window" : f.tessa === "lost" ? "the convoy went east. Anna still sets two plates." : f.tessa === "lastchance" ? "TESSA IS ON THE EAST CONVOY — it hasn't cleared the hills yet" : "taken in a curfew sweep; the holding yard ships 'resettlement labor' east", "folk_tessa", f.tessa));
+    rows.push(folkRow("🗝", "The locksmith's widow", f.voss === "done" ? "Dain Voss is buried honestly, and a sergeant is not sleeping well" : f.voss === "lost" ? "Mara Voss left the city by night. The canal keeps its story." : f.voss === "guard" ? "KRELL KNOWS — Mara Voss's door will be visited tonight" : "they say Dain Voss fell drunk into the canal. His widow says Dain didn't drink.", "folk_voss", f.voss));
+  }
+  if (ch >= 10) {
+    rows.push(folkRow("🪖", "Widow Hessa's son", f.corin === "done" ? "Corin's black cloak hangs on the Ember's wall, stripped of its pins" : f.corin === "lost" ? "Corin re-upped. Hessa still sets his place." : "Corin took Blackpike coin for his mother's sake. She wants him home before he's blooded.", "folk_corin", f.corin));
+  }
+  if (ch === 9) rows.push(`<div class="card-tag" style="padding:4px 2px">Sera will have more names as the city trusts you further.</div>`);
+  scene("🏮", "Word From the Streets",
+    [ `Sera doesn't look up from the charcoal map. "Operations win the war table. This wins the war." She nods at a scrap of paper weighted with a pistol crossbow bolt — names, in her small exact hand.`,
+      `"Nobody's paying. Most of them can't. That's rather the point."` ],
+    [], `<div class="choices">${rows.join("")}<button onclick="goScene('town')">🕯 Back to the Ember</button></div>`);
+}
+
+/* --- 1. THE CAT (ch8) --- */
+function folk_cat() {
+  scene("🐈", "The Name Called Into Alleys",
+    [ `Widow Ottley has held her place in the bread line for six hours, and spends the waiting calling "Maribel" at every shadow. Her husband is four years dead; the tabby is what answered the silence. Maribel bolted at the siege bells and has not come home.`,
+      `"She's all the family the Protectorate left me," the widow says, and straightens like it costs her something. "I've nothing to pay heroes with."`,
+      `<i>That's rather the point.</i>` ],
+    [ { txt: "🔍 Read the alley signs and find one small cat in an occupied city", req: `(Survival, DC 11) <span class="win">✓ Maribel comes home (+2 Hearts)</span> · <span class="lose">✗ a fistful of scratches (1d4) — but you can try again</span>`, onclick: "folkCatTry()" },
+      { txt: "🏮 Not now — back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folkCatTry() {
+  const res = sceneCheck("Survival", 11);
+  if (res.success) {
+    folkState().cat = "done";
+    addTruth(2, "the widow's cat, carried home");
+    grantXp(80, "Maribel");
+    scene("🐈", "Maribel, Repatriated",
+      [ `The trail of feather-ends and outraged mice leads, of course, to the one place with food to spare: the Blackpike stable, where Maribel has been mousing for the occupation. You lift her off a saddle blanket mid-yawn. She does not resist. Traitor.`,
+        `Widow Ottley takes the cat like something rescued from a fire, and stands very straight, and doesn't cry, and cries. The bread line pretends not to watch. The whole street knows by nightfall who brought her home — <b>and whose side that someone is on.</b>` ],
+      [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  } else {
+    const d4 = d(4); C.hp = Math.max(1, C.hp - d4);
+    scene("🐈", "Negotiations Break Down",
+      [ `You find A cat. Whether it is THE cat becomes academic when it redesigns the back of your hand. <b>(−${d4} HP)</b> A lamplighter watches you lose a fight to four pounds of tabby and says, kindly, "That one's Maribel all right. She'll come to sardines."`,
+        `<i>Sardines. Noted. She's still out there.</i>` ],
+      [ { txt: "🐟 Try again, wiser", onclick: "goScene('folk_cat')" },
+        { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  }
+}
+
+/* --- 2. THE BAKERY (ch8) --- */
+function folk_bake() {
+  scene("🍞", "The Crime of Baking",
+    [ `Tammis fed the bread lines out of his own flour until an enforcer did the arithmetic and called generosity "hoarding." They took his ovens' iron doors, his pans — and his mother's recipe book, four generations of marginalia now sitting in the requisition depot as "evidence."`,
+      `"The ovens I can rebuild," he says, hands still dusted with flour out of pure habit. "The book is my family."` ],
+    [ { txt: "🌫 Slip into the depot after curfew", req: `(Stealth, DC 12) <span class="win">✓ the book and his pans, quietly (+3 Hearts)</span> · <span class="lose">✗ the alarm — Blackpikes come, and it gets loud</span>`, onclick: "folkBakeTry()" },
+      { txt: "💰 Buy it back through Zephyrine's channels — 80 gold, no questions", req: C.gold < 80 ? `<span class="lose">(you don't have 80 gold)</span>` : `<span class="win">✓ the book, ransomed (+3 Hearts)</span>`, onclick: C.gold >= 80 ? "folkBakePay()" : "goScene('folk_bake')" },
+      { txt: "🏮 Not now — back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folkBakeTry() {
+  const res = sceneCheck("Stealth", 12);
+  if (res.success) {
+    folkState().bake = "done";
+    addTruth(3, "a baker's inheritance, returned");
+    grantXp(150, "the recipe book");
+    C.items.push("Tammis' Seedcake");
+    scene("🍞", "Four Generations, Recovered",
+      [ `The depot clerk files by candlelight and never hears you. The book is in a crate marked CONTRABAND — LITERARY, which would make Tammis' mother laugh, wherever she is. You take the pans too, and, on principle, the crate.`,
+        `By dawn the Ember smells of real bread for the first time. Tammis presses a seedcake on you — dense as a brick, sweet as a held grudge — and starts baking for the resistance outright. <i>(Tammis' Seedcake added: restores 2d4+4 HP when eaten.)</i>` ],
+      [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  } else {
+    scene("🍞", "The Alarm",
+      [ `A stack of requisitioned kettles goes over like a carillon. Whistles answer whistles. You have the book in one hand and a decision in the other — because two Blackpikes are already in the doorway, and they are not readers.` ],
+      [ { txt: "⚔ Fight your way out with the book", onclick: "startCombat(['blackpike','thug'], 'folk_bake_loud', { noFlee: true, intro: 'The doorway is narrow. That is the only good news.' })" } ]);
+  }
+}
+function folkBakePay() {
+  C.gold -= 80;
+  folkState().bake = "done";
+  addTruth(3, "a baker's inheritance, ransomed");
+  grantXp(100, "the recipe book, bought");
+  C.items.push("Tammis' Seedcake");
+  scene("🍞", "No Questions Asked",
+    [ `Zephyrine's channels produce the book in two days, smelling faintly of the Otherworld and someone else's tobacco. Tammis doesn't ask how. He bakes. The Ember eats real bread, and a seedcake finds its way into your pack with your name burnt into the crust. <i>(Tammis' Seedcake added: restores 2d4+4 HP.)</i>` ],
+    [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folk_bake_loud() {
+  folkState().bake = "done";
+  addTruth(2, "a baker's inheritance, returned loudly");
+  grantXp(150, "the recipe book, the hard way");
+  C.items.push("Tammis' Seedcake");
+  scene("🍞", "Louder Than Intended",
+    [ `You leave the depot through its own front door, book under your arm, pursued by paperwork that will never quite reconcile. The street saw everything — which costs you some quiet, and buys you something else: a story. The one where somebody fought the Protectorate over a <i>recipe book</i>, and won.`,
+      `Tammis bakes your seedcake heavier than the others. "For the trouble." <i>(Tammis' Seedcake added: restores 2d4+4 HP.)</i>` ],
+    [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+}
+
+/* --- 3. THE DAUGHTER (ch9) --- */
+function folk_tessa() {
+  const f = folkState();
+  if (f.tessa === "lastchance") return folk_tessa_convoy();
+  scene("🎀", "Two Plates",
+    [ `Anna Brooke still sets two plates. Her daughter Tessa — fifteen, quick, mouthy in the way that used to be safe — corrected a Blackpike's arithmetic at a checkpoint and was taken in the next curfew sweep. The holding yard calls it "resettlement labor." The convoys go east and do not write.`,
+      `"They wouldn't even tell me which yard," Anna says. Her hands are perfectly still. It's the stillness of someone who has decided not to shatter. "You find people. Find mine."`,
+      `<i>Sera's note in the margin: yard three, by the tannery sluice. Convoy leaves within days.</i>` ],
+    [ { txt: "📜 Walk in with forged release papers", req: `(Investigation, DC 13${flags.opsDone && flags.opsDone.includes("B") ? ", advantage — you own the King's own typeface" : ""}) <span class="win">✓ Tessa walks out the front gate (+4 Hearts)</span> · <span class="lose">✗ the forgery is questioned — whistles, and it gets loud</span>`, onclick: "folkTessaPapers()" },
+      { txt: "🗣 Talk the yard sergeant around — a girl who corrects arithmetic is nobody's insurgent", req: `(Persuasion, DC 13) <span class="win">✓ Tessa walks out (+4 Hearts)</span> · <span class="lose">✗ he reaches for the whistle instead</span>`, onclick: "folkTessaTalk()" },
+      { txt: "🏮 Not now — back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folkTessaPapers() { folkTessaCheck(sceneCheck("Investigation", 13, { adv: !!(flags.opsDone && flags.opsDone.includes("B")) })); }
+function folkTessaTalk() { folkTessaCheck(sceneCheck("Persuasion", 13)); }
+function folkTessaCheck(res) {
+  if (res.success) {
+    folkState().tessa = "done";
+    addTruth(4, "a daughter walked out the front gate");
+    grantXp(220, "Tessa Brooke");
+    scene("🎀", "One Plate Too Many No Longer",
+      [ `The paperwork — or your voice — holds. A clerk stamps three forms he doesn't read, and Tessa Brooke walks out of yard three into daylight, chin first, already composing her review of the accommodations.`,
+        `At the door, Anna doesn't run to her daughter. She walks — very slowly, very carefully, the way you carry something over ice — and then the stillness breaks all at once, and the whole lane hears it, and the whole lane knows who did this. <b>Two plates. Two people.</b>` ],
+      [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  } else {
+    scene("🎀", "The Whistle",
+      [ `The sergeant's eyes flick from the papers to your face and find something he doesn't like in the arithmetic. The whistle comes up. You are done being subtle — Tessa is fifteen feet away behind wire, and the convoy manifest on the wall has tomorrow's date.` ],
+      [ { txt: "⚔ Loud it is. Take the yard.", onclick: "folkState().tessa='fighting'; startCombat(['blackpike','inquisitor'], 'folk_tessa_win', { noFlee: true, fleeScene: null, intro: 'A Blackpike and a Truth-Warden between you and the wire. The Warden reaches for his little book of names. Take it from him.' })" } ]);
+  }
+}
+function folk_tessa_win() {
+  folkState().tessa = "done";
+  addTruth(3, "a daughter carried out through the smoke");
+  grantXp(220, "Tessa Brooke, the hard way");
+  scene("🎀", "Out Through the Smoke",
+    [ `You cut the wire yourself. Tessa is out and running before you finish, doubling back only to kick the fallen sergeant's whistle into the sluice — her review of the accommodations, delivered. The yard will be rebuilt. The story of the night it wasn't will not be un-told.`,
+      `Anna Brooke meets you both in the lane. What she says to you cannot be transcribed, because it isn't words.` ],
+    [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folk_tessa_convoy() {
+  scene("🎀", "The East Road",
+    [ `You lost the yard — and the yard didn't wait. The convoy left at dawn: three wagons, a Blackpike escort, and a manifest with Tessa Brooke's name spelled wrong. It hasn't cleared the hills. Sera's horses are saddled.`,
+      `<i>This is the last chance. Convoys that clear the hills do not come back.</i>` ],
+    [ { txt: "⚔ Ride. Hit the escort in the cut before the hills.", req: `<span class="win">✓ every soul on the manifest comes home (+3 Hearts)</span> · <span class="lose">✗ if you fall, the convoy rolls east — and Anna sets two plates forever</span>`, onclick: "folkState().tessa='lastchance_fighting'; startCombat(['blackpike','blackpike','thug'], 'folk_tessa2_win', { noFlee: true, intro: 'The cut narrows the road to one wagon wide. The escort turns. Somewhere behind the canvas, a girl who corrects arithmetic starts counting your odds aloud.' })" },
+      { txt: "🏮 Not yet — the Ember first", onclick: "goScene('folkboard')" } ]);
+}
+function folk_tessa2_win() {
+  folkState().tessa = "done";
+  addTruth(3, "a convoy turned around in the hills");
+  grantXp(260, "the east road");
+  scene("🎀", "Turned Around",
+    [ `The escort breaks in the cut. You open every wagon — eleven names, one of them spelled wrong — and turn the horses west. Tessa rides up front the whole way home, informing the driver at intervals that his handling of the cut was adequate.`,
+      `Eleven doors in Ironvale get a knock that night. Eleven households learn what the Ember is <i>for</i>.` ],
+    [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+}
+
+/* --- 4. THE HUSBAND (ch9) --- */
+function folk_voss() {
+  const f = folkState();
+  if (f.voss === "guard") return folk_voss_night();
+  scene("🗝", "The Canal Keeps No Secrets",
+    [ `The report says Dain Voss, locksmith, drank himself into the canal. His widow Mara has read it forty times. "Dain didn't drink," she says. "Dain made keys. And three weeks ago he came home grey and wouldn't say why, and started sleeping with the shop shuttered."`,
+      `A locksmith. In the month the "stolen treasury" rolled east in locked Blackpike wagons. <i>Somebody needed keys copied — and Dain Voss said no.</i>` ],
+    [ { txt: "🔍 Work the canal bank and the shuttered shop", req: `(Investigation, DC 13${flags.evidence && flags.evidence.includes("wagonManifest") ? ", advantage — you already hold the wagon manifest" : ""}) <span class="win">✓ what Dain hid, and WHO (+4 Hearts)</span> · <span class="lose">✗ you're seen looking — and tonight, someone visits the widow</span>`, onclick: "folkVossTry()" },
+      { txt: "🏮 Not now — back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folkVossTry() {
+  const res = sceneCheck("Investigation", 13, { adv: !!(flags.evidence && flags.evidence.includes("wagonManifest")) });
+  if (res.success) {
+    scene("🗝", "What the Locksmith Hid",
+      [ `Under the third floorboard of the shuttered shop: a wax key-mold, and a note in a locksmith's careful print. <i>"Sgt. Krell, Blackpike — wants treasury pattern copied. Refused twice. He says everyone signs eventually."</i> Dated two days before the canal.`,
+        `Sergeant Krell drinks at the Broken Spoke, wears his coat open, and has stopped being careful. Everyone signs eventually — he believes that.` ],
+      [ { txt: "🗣 Walk up to Krell's table and lay the mold on it", req: `(Intimidation, DC 13) <span class="win">✓ he breaks — a confession the whole taproom hears (+4 Hearts)</span> · <span class="lose">✗ he goes for steel in front of everyone</span>`, onclick: "folkVossConfront()" },
+        { txt: "⚔ Skip the theater. He murdered a locksmith.", onclick: "startCombat(['blackpike'], 'folk_voss_win', { noFlee: true, intro: 'Krell stands, coat open, unbothered — right up until he recognizes the mold in your hand.' })" } ]);
+  } else {
+    folkState().voss = "guard";
+    scene("🗝", "Seen Looking",
+      [ `A window shutters across the canal as you straighten from the mud. By noon, someone in a black coat has walked past the widow's door twice, slowly, the way a man measures a thing he plans to remove.`,
+        `<i>Krell knows someone's pulling the thread. Tonight, Mara Voss's door gets a visit — unless you're standing in front of it.</i>` ],
+      [ { txt: "🌙 Stand the night watch at her door", onclick: "goScene('folk_voss')" },
+        { txt: "🏮 Back to the board (the night is coming either way)", onclick: "goScene('folkboard')" } ]);
+  }
+}
+function folkVossConfront() {
+  const res = sceneCheck("Intimidation", 13);
+  if (res.success) {
+    folkState().voss = "done";
+    addTruth(4, "a murder called by its name in a full taproom");
+    grantXp(220, "Sergeant Krell, confessed");
+    scene("🗝", "Everyone Signs Eventually",
+      [ `You set the mold on Krell's table and say nothing at all. The taproom goes quiet the way rooms do when they can smell history. Krell talks — first to bluster, then to bargain, then, horribly, to <i>explain</i>, and by the time he understands what he's confessing to, forty people have heard the arithmetic of the canal.`,
+        `Mara Voss buries her husband under his own name: DAIN VOSS, LOCKSMITH. HE SAID NO. The stone gets touched by strangers like a shrine.` ],
+      [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  } else {
+    scene("🗝", "Steel in the Taproom",
+      [ `Krell is quicker to the blade than to the truth. Chairs go over. The taproom clears a circle the way it does for weddings and killings.` ],
+      [ { txt: "⚔ Finish it", onclick: "startCombat(['blackpike'], 'folk_voss_win', { noFlee: true, intro: 'Everyone signs eventually, Krell believes. Time to collect his.' })" } ]);
+  }
+}
+function folk_voss_win() {
+  folkState().voss = "done";
+  addTruth(3, "the canal's story, corrected");
+  grantXp(220, "Sergeant Krell, answered");
+  scene("🗝", "The Canal's Story, Corrected",
+    [ `Krell goes down in front of witnesses, and the mold and the note go up on the Ember's wall beside the gallery of the disappeared — the first entry in that gallery to ever get an <i>answer</i>.`,
+      `Mara Voss buries her husband under his own name. She sends you his good chisels. "He'd want a working hand to have them."` ],
+    [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folk_voss_night() {
+  scene("🗝", "The Night Watch",
+    [ `You take the widow's doorstep as the lamps go out. Past midnight, two shapes come up the lane with the unhurried walk of men on wages — Krell's wages.`,
+      `<i>If you fall here, Mara Voss leaves Ironvale by morning, and the canal keeps its story forever.</i>` ],
+    [ { txt: "⚔ They don't reach the door.", req: `<span class="win">✓ the widow sleeps safe — and Krell's men talk (+3 Hearts)</span> · <span class="lose">✗ if you fall, Mara flees the city and the thread is cut (−2 Hearts)</span>`, onclick: "folkState().voss='night_fighting'; startCombat(['blackpike','thug'], 'folk_voss_night_win', { noFlee: true, intro: 'Two of them, one doorstep, no witnesses. Exactly how they like it. Exactly how they should not have found it.' })" } ]);
+}
+function folk_voss_night_win() {
+  folkState().voss = "done";
+  addTruth(3, "a widow's door held at midnight");
+  grantXp(220, "the night watch");
+  scene("🗝", "Held",
+    [ `Krell's men don't reach the door — and the one who can still talk does, at length, about wages and wax molds and a canal. Mara Voss listens from the window with her husband's smallest hammer in her hand, unnecessary and magnificent.`,
+      `Krell is finished in this city the moment the story walks up the lane. The stone still gets carved: HE SAID NO.` ],
+    [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+}
+
+/* --- 5. THE SON (ch10) --- */
+function folk_corin() {
+  const f = folkState();
+  if (f.corin === "second") return folk_corin_second();
+  scene("🪖", "The Coin He Took",
+    [ `Widow Hessa's boy Corin signed with the Blackpikes in the hungry month — for the coin, for his mother, for bread. She knows exactly why he did it, which is the part she can't forgive herself for. "He's not blooded yet," she says. "He stands a post on the mill bridge, nights. He's nineteen. Bring him home before they make him <i>use</i> that pike."`,
+      flags.truth >= 50 ? `<i>The city is turning — even the Blackpike barracks feel it. A recruit on a cold bridge has been doing arithmetic of his own.</i>` : `` ].filter(Boolean),
+    [ { txt: "🗣 Walk up to his post, empty-handed, and talk", req: `(Persuasion, DC 14${flags.truth >= 50 ? ", advantage — the whole city's doubt is on your side" : ""}) <span class="win">✓ Corin comes home (+3 Hearts)</span> · <span class="lose">✗ training wins — he calls it in, and the response ambushes you</span>`, onclick: "folkCorinTalk()" },
+      { txt: "🏮 Not now — back to the board", onclick: "goScene('folkboard')" } ]);
+}
+function folkCorinTalk() {
+  const res = sceneCheck("Persuasion", 14, { adv: flags.truth >= 50 });
+  if (res.success) {
+    folkState().corin = "done";
+    addTruth(3, "a son walked off his post");
+    grantXp(180, "Corin Hessa");
+    scene("🪖", "Off the Bridge",
+      [ `You talk about wages, and about the gallows the wages build, and about a woman who still sets his place. Corin looks at the mill water for a long time. Then he takes the pins off his cloak one at a time, sets them on the bridge rail in a neat row like a man paying an exact debt, and walks home in the dark beside you.`,
+        `Hessa hits him, hugs him, feeds him — in that order, the correct order. His black cloak goes up on the Ember's wall, stripped. Sera finds him a spear he can hold facing the <i>right</i> way.` ],
+      [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  } else {
+    scene("🪖", "Training Wins",
+      [ `The words almost land — you can see them almost land — and then two years of drill slam down like a visor, and Corin's whistle is out. The response squad comes up the towpath fast. The boy won't meet your eyes.` ],
+      [ { txt: "⚔ Survive the response — without hurting the boy", onclick: "folkState().corin='ambush_fighting'; startCombat(['blackpike','thug'], 'folk_corin_ambushwin', { noFlee: true, intro: 'The squad comes in swinging. Corin stands frozen at the rail, whistle still in his mouth, watching what his coin actually buys.' })" } ]);
+  }
+}
+function folk_corin_ambushwin() {
+  folkState().corin = "second";
+  scene("🪖", "What the Coin Buys",
+    [ `The squad is down and groaning, and you never once touched the boy — and he noticed. He's still at the rail, whistle in his fist now, looking at the men he called and the stranger who spared him.`,
+      `There is a moment on every bridge where it can go either way.` ],
+    [ { txt: "🗣 One more try — quietly, while the whistle's down", req: `(Persuasion, DC 12) <span class="win">✓ he comes home (+2 Hearts)</span> · <span class="lose">✗ he re-ups out of shame — lost to the black (−2 Hearts)</span>`, onclick: "folkCorinSecond()" } ]);
+}
+function folk_corin_second() { folk_corin_ambushwin(); }
+function folkCorinSecond() {
+  const res = sceneCheck("Persuasion", 12);
+  if (res.success) {
+    folkState().corin = "done";
+    addTruth(2, "a son came home the hard way");
+    grantXp(180, "Corin Hessa, the hard way");
+    scene("🪖", "Home, the Hard Way",
+      [ `"They'd have made me hurt someone eventually," he says to the mill water. "Tonight it was supposed to be you." He drops the whistle in. It doesn't float.`,
+        `Hessa's door. The hitting, the hugging, the feeding. The cloak on the Ember's wall. Some debts you pay by walking home.` ],
+      [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  } else {
+    folkState().corin = "lost";
+    addTruth(-2, "a son lost to shame and wages");
+    scene("🪖", "Lost to the Black",
+      [ `Shame is the recruiter's best friend. Corin can't walk home past the men he called down on you — so he walks the other way, to the barracks, and re-ups for the signing coin, and doesn't look back once. Boys who don't look back are the ones who know they'd stop.`,
+        `Hessa still sets his place. You don't tell Sera to take the name off the list. Neither does Sera.` ],
+      [ { txt: "🏮 Back to the board", onclick: "goScene('folkboard')" } ]);
+  }
+}
+
+/* --- consequences for fallen rescuers: latched stages resolve when the board next renders --- */
+function folkResolveFallen() {
+  const f = folkState();
+  if (f.tessa === "fighting") f.tessa = "lastchance"; // the yard raid failed — the convoy moves
+  else if (f.tessa === "lastchance_fighting") { f.tessa = "lost"; addTruth(-2, "a convoy cleared the hills"); }
+  if (f.voss === "night_fighting") { f.voss = "lost"; addTruth(-2, "a widow fled the city by night"); }
+  if (f.corin === "ambush_fighting") f.corin = "second"; // he saw you fall; the bridge moment keeps
+}
+const _folkBoardWrapped = folkBoard;
+function folkboardScene() { folkResolveFallen(); _folkBoardWrapped(); }
+
+/* the ones you helped, at the midnight bell */
+function folkGateLines() {
+  const f = folkState(), lines = [];
+  if (f.bake === "done") lines.push("Tammis at the windlass, flour still on his forearms");
+  if (f.tessa === "done") lines.push("Anna Brooke and a girl with her chin out, hauling rope side by side");
+  if (f.voss === "done") lines.push("Mara Voss holding a lantern high with her husband's smallest hammer in her belt");
+  if (f.corin === "done") lines.push("Corin Hessa in a stripped black cloak, putting two years of Blackpike drill into the bolts");
+  if (f.cat === "done") lines.push("Widow Ottley, who could not haul anything, standing guard over everyone's coats with Maribel on her shoulder");
+  if (!lines.length) return "";
+  return ` And you know the hands on the bolts. ${lines.join("; ")}.`;
+}
+Object.assign(SCENES, {
+  folkboard: folkboardScene,
+  folk_cat, folk_bake, folk_bake_loud, folk_tessa, folk_tessa_win, folk_tessa2_win,
+  folk_voss, folk_voss_win, folk_voss_night_win, folk_corin, folk_corin_ambushwin
+});
+
+/* ============================================================
    RED HERRINGS — false leads with real consequences
    ============================================================ */
 function herringSmugglers() {
@@ -4504,6 +4840,19 @@ function journalEntries() {
     ? `Ironvale came home. ${(flags.truth || 0) >= 65 ? "The city opened its own gates at the midnight bell." : "The east gate was stormed one last time."} ${flags.vailYielded ? "Vail yielded her duel and her testimony both." : ""}`
     : `The host stands before the walls. Hearts of the City: ${flags.truth || 0}/100. At 65, the gates open themselves.`);
   add(13, "Epilogue", `The Serpent unmasked; the Coward King uncrowned. Somewhere in the nation, the Circle's other chairs are still warm.`);
+  // the small debts — the people, not the war
+  if (ch >= 8 && flags.folk && Object.keys(flags.folk).length) {
+    const f = flags.folk, bits = [];
+    if (f.cat === "done") bits.push("Maribel sleeps on Widow Ottley's sill");
+    if (f.bake === "done") bits.push("Tammis bakes for the Ember, recipe book home");
+    if (f.tessa === "done") bits.push("Tessa Brooke is home — her mother sets two plates for two people");
+    if (f.tessa === "lost") bits.push("the convoy cleared the hills. Anna Brooke still sets two plates");
+    if (f.voss === "done") bits.push("Dain Voss is buried under his own name: HE SAID NO");
+    if (f.voss === "lost") bits.push("Mara Voss left by night; the canal keeps its story");
+    if (f.corin === "done") bits.push("Corin Hessa's stripped black cloak hangs on the Ember wall");
+    if (f.corin === "lost") bits.push("Corin re-upped. Hessa still sets his place");
+    if (bits.length) e.push({ n: 0, title: "The Small Debts", text: `Not everything on Sera's list was a war. ${bits.join(". ")}.`, current: false });
+  }
   return e;
 }
 
@@ -4541,7 +4890,7 @@ function heroSheetHtml() {
     <div class="sheet-block"><b>Inventory:</b><br>${Object.keys(itemCounts).length ? Object.entries(itemCounts).map(([i, n]) => `<span class="tag">${esc(i)}${n > 1 ? " ×" + n : ""}</span>`).join("") : "<span class='card-tag'>Empty pockets</span>"}</div>
     ${flags.evidence && flags.evidence.length ? `<div class="sheet-block"><b>🧾 Evidence & Proofs:</b><br>${flags.evidence.map(id => `<span class="tag" style="${EVIDENCE[id].false ? "border-color:#8c5a4a;color:#d48a80" : "border-color:#5a7d4a;color:#a8c69a"}">${EVIDENCE[id].false ? "⚠" : "✓"} ${esc(EVIDENCE[id].name)}</span>`).join("")}${hasFalseEvidence() ? `<div class="card-tag" style="margin-top:4px;color:#d48a80">⚠ Unverified papers in the satchel — a debunked lead can sink a true case.</div>` : ""}</div>` : ""}
     <h2 style="color:var(--gold);font-variant:small-caps;letter-spacing:2px;margin-top:18px">📖 Journal</h2>
-    ${journal.map(j => `<div class="sheet-block" ${j.current ? 'style="border-color:var(--gold)"' : ""}><b>${j.current ? "▶ " : "✓ "}Ch. ${j.n} — ${j.title}</b><br><span style="font-size:.92em">${j.text}</span></div>`).join("")}
+    ${journal.map(j => `<div class="sheet-block" ${j.current ? 'style="border-color:var(--gold)"' : ""}><b>${j.current ? "▶ " : j.n === 0 ? "🏮 " : "✓ "}${j.n === 0 ? j.title : `Ch. ${j.n} — ${j.title}`}</b><br><span style="font-size:.92em">${j.text}</span></div>`).join("")}
     ${flags.chapter >= 8 && flags.chapter <= 12 ? `<div class="sheet-block"><b>🗣 Hearts of the City:</b> ${flags.truth || 0}/100 — at 65+, Ironvale rises with you.</div>` : ""}
   </div>`;
 }
